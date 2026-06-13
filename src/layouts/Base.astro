@@ -45,18 +45,6 @@ const {
   <body>
     <div class="spotlight" aria-hidden="true"></div>
 
-    <button class="theme-toggle" id="themeToggle" aria-label="切换明暗">
-      <!-- 太阳(浅色时显示) -->
-      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-        <circle cx="12" cy="12" r="4" />
-        <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-      </svg>
-      <!-- 月亮(深色时显示) -->
-      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-      </svg>
-    </button>
-
     <!-- 配色切换器:平时收起为一个调色盘图标,点击才优雅展开 -->
     <div class="palette" id="palette">
       <button class="palette-trigger" id="paletteTrigger" aria-label="配色方案" aria-expanded="false">
@@ -68,19 +56,31 @@ const {
         </svg>
       </button>
       <div class="palette-panel" id="palettePanel" role="group" aria-label="配色方案">
-        <span class="swatch" data-p="amber" data-name="黄昏书房" title="黄昏书房 · 琥珀金"></span>
-        <span class="swatch" data-p="pine" data-name="松林雾隐" title="松林雾隐 · 墨绿暖灰"></span>
-        <span class="swatch" data-p="terra" data-name="赤陶暮色" title="赤陶暮色 · 陶土赭石"></span>
-        <span class="swatch" data-p="indigo" data-name="靛蓝旧纸" title="靛蓝旧纸 · 沉静书卷"></span>
-        <span class="swatch" data-p="heather" data-name="石楠紫灰" title="石楠紫灰 · 雾霾紫"></span>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换明暗" title="切换明暗">
+          <!-- 太阳(浅色时显示) -->
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+          </svg>
+          <!-- 月亮(深色时显示) -->
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+          </svg>
+        </button>
         <span class="sep" aria-hidden="true"></span>
-        <span class="swatch" data-p="ink" data-name="墨白宣纸" title="墨白宣纸 · 朱砂点睛"></span>
-        <span class="swatch" data-p="stone" data-name="裸灰画廊" title="裸灰画廊 · 香槟铜"></span>
-        <span class="swatch" data-p="olive" data-name="暗橄榄" title="暗橄榄 · 暖卡其"></span>
-        <span class="swatch" data-p="onyx" data-name="碳金" title="碳金 · 高对比哑金"></span>
+        <button class="swatch" type="button" data-p="amber" data-name="黄昏书房" aria-label="黄昏书房" title="黄昏书房 · 琥珀金"></button>
+        <button class="swatch" type="button" data-p="pine" data-name="松林雾隐" aria-label="松林雾隐" title="松林雾隐 · 墨绿暖灰"></button>
+        <button class="swatch" type="button" data-p="terra" data-name="赤陶暮色" aria-label="赤陶暮色" title="赤陶暮色 · 陶土赭石"></button>
+        <button class="swatch" type="button" data-p="indigo" data-name="靛蓝旧纸" aria-label="靛蓝旧纸" title="靛蓝旧纸 · 沉静书卷"></button>
+        <button class="swatch" type="button" data-p="heather" data-name="石楠紫灰" aria-label="石楠紫灰" title="石楠紫灰 · 雾霾紫"></button>
         <span class="sep" aria-hidden="true"></span>
-        <span class="swatch" data-p="claude" data-name="Claude" title="Claude · 陶土暖橙"></span>
-        <span class="swatch" data-p="openai" data-name="OpenAI" title="OpenAI · 墨黑薄荷"></span>
+        <button class="swatch" type="button" data-p="ink" data-name="墨白宣纸" aria-label="墨白宣纸" title="墨白宣纸 · 朱砂点睛"></button>
+        <button class="swatch" type="button" data-p="stone" data-name="裸灰画廊" aria-label="裸灰画廊" title="裸灰画廊 · 香槟铜"></button>
+        <button class="swatch" type="button" data-p="olive" data-name="暗橄榄" aria-label="暗橄榄" title="暗橄榄 · 暖卡其"></button>
+        <button class="swatch" type="button" data-p="onyx" data-name="碳金" aria-label="碳金" title="碳金 · 高对比哑金"></button>
+        <span class="sep" aria-hidden="true"></span>
+        <button class="swatch" type="button" data-p="claude" data-name="Claude" aria-label="Claude" title="Claude · 陶土暖橙"></button>
+        <button class="swatch" type="button" data-p="openai" data-name="OpenAI" aria-label="OpenAI" title="OpenAI · 墨黑薄荷"></button>
       </div>
     </div>
 
@@ -96,10 +96,18 @@ const {
       const toggle = document.getElementById('themeToggle')!;
 
       // 明暗切换(初始值已由 head 内联脚本应用,这里只处理点击)
+      function syncThemeToggleLabel() {
+        const isDark = root.getAttribute('data-theme') === 'dark';
+        const label = isDark ? '切换到浅色模式' : '切换到深色模式';
+        toggle.setAttribute('aria-label', label);
+        toggle.setAttribute('title', label);
+      }
+      syncThemeToggleLabel();
       toggle.addEventListener('click', () => {
         const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         root.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
+        syncThemeToggleLabel();
       });
 
       // 配色切换:点色卡换整站配色
@@ -108,7 +116,11 @@ const {
       const swatches = [...document.querySelectorAll<HTMLElement>('.swatch')];
       function syncSwatchActive() {
         const cur = root.getAttribute('data-palette');
-        swatches.forEach((s) => s.classList.toggle('active', s.dataset.p === cur));
+        swatches.forEach((s) => {
+          const active = s.dataset.p === cur;
+          s.classList.toggle('active', active);
+          s.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
       }
       swatches.forEach((s) => {
         s.addEventListener('click', () => {

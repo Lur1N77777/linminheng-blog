@@ -613,28 +613,30 @@ section { margin-bottom: 6rem; scroll-margin-top: 6rem; }
 }
 
 /* ============================================================
-   明暗切换按钮
+   面板内明暗切换按钮
    ============================================================ */
 .theme-toggle {
-  position: fixed;
-  top: 1.6rem;
-  right: 1.8rem;
-  z-index: 50;
-  width: 44px;
-  height: 44px;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 50%;
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 70%, transparent);
-  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--accent-soft) 72%, transparent);
   color: var(--text-muted);
+  font: inherit;
   cursor: pointer;
   transition: color var(--speed) var(--ease), border-color var(--speed) var(--ease),
-              transform var(--speed) var(--ease-out);
+              background var(--speed) var(--ease), transform var(--speed) var(--ease-out);
 }
-.theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: rotate(15deg); }
-.theme-toggle svg { width: 19px; height: 19px; }
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: rotate(15deg);
+}
+.theme-toggle svg { width: 16px; height: 16px; }
 .theme-toggle .moon { display: none; }
 html[data-theme="dark"] .theme-toggle .moon { display: block; }
 html[data-theme="dark"] .theme-toggle .sun  { display: none; }
@@ -645,14 +647,16 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
 .palette {
   position: fixed;
   top: 1.6rem;
-  right: 5rem;          /* 留出明暗按钮的位置 */
+  right: 1.8rem;
   z-index: 50;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  width: 44px;
+  height: 44px;
+  display: block;
 }
 /* 触发按钮(调色盘图标) */
 .palette-trigger {
+  position: relative;
+  z-index: 2;
   width: 44px;
   height: 44px;
   flex-shrink: 0;
@@ -663,6 +667,7 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   background: color-mix(in srgb, var(--bg) 70%, transparent);
   backdrop-filter: blur(10px);
   color: var(--text-muted);
+  font: inherit;
   cursor: pointer;
   transition: color var(--speed) var(--ease), border-color var(--speed) var(--ease),
               transform var(--speed) var(--ease-out);
@@ -674,6 +679,9 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
 
 /* 展开的色卡容器:默认收起(宽度 0、透明、不可点),展开时优雅滑出 */
 .palette-panel {
+  position: absolute;
+  right: calc(100% + 0.75rem);
+  top: 50%;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -682,35 +690,44 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   opacity: 0;
   pointer-events: none;
   overflow: hidden;
-  transform: translateX(8px);
+  transform: translate(8px, -50%);
   transition: max-width 0.5s var(--ease-out),
               opacity 0.4s var(--ease),
               transform 0.5s var(--ease-out),
               padding 0.5s var(--ease-out);
 }
 .palette.open .palette-panel {
-  max-width: 520px;
+  max-width: 560px;
   opacity: 1;
   pointer-events: auto;
-  transform: none;
-  padding: 0.4rem 0.7rem;
+  transform: translateY(-50%);
+  padding: 0.45rem 0.75rem;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 70%, transparent);
   backdrop-filter: blur(10px);
 }
 .swatch {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   flex-shrink: 0;
   border-radius: 50%;
+  border: 0;
+  padding: 0;
   cursor: pointer;
-  border: 2px solid transparent;
   position: relative;
-  transition: transform var(--speed) var(--ease-out), border-color var(--speed) var(--ease);
+  appearance: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 25%, transparent),
+              0 0 0 0 transparent;
+  transition: transform var(--speed) var(--ease-out),
+              box-shadow var(--speed) var(--ease);
 }
-.swatch:hover { transform: scale(1.15); }
-.swatch.active { border-color: var(--text); }
+.swatch:hover { transform: scale(1.12); }
+.swatch.active {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 25%, transparent),
+              0 0 0 2px var(--text),
+              0 0 0 5px var(--accent-soft);
+}
 /* 每个色卡用各自配色的强调色作为视觉标识(双色渐变,暗示深浅两版) */
 .swatch[data-p="amber"]   { background: linear-gradient(135deg, #E3A857, #B07A36); }
 .swatch[data-p="pine"]    { background: linear-gradient(135deg, #83AE92, #4C7659); }
@@ -726,7 +743,7 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
 /* 分隔符:不同组之间留一道细缝 */
 .sep {
   width: 1px;
-  height: 18px;
+  height: 24px;
   background: var(--border);
   margin: 0 0.15rem;
   flex-shrink: 0;
@@ -754,10 +771,68 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
 .swatch:hover::after { opacity: 1; }
 
 @media (max-width: 600px) {
-  .palette { right: 1rem; top: auto; bottom: 1.2rem; }
-  /* 手机上色卡向左展开,避免溢出屏幕 */
-  .palette.open .palette-panel { max-width: 78vw; flex-wrap: wrap; justify-content: flex-end; }
-  .theme-toggle { top: auto; bottom: 1.2rem; right: 1rem; }
+  /* 调色盘:右下角固定为按钮锚点,面板从按钮上方展开 */
+  .palette {
+    right: 1rem;
+    top: auto;
+    bottom: calc(1.2rem + env(safe-area-inset-bottom));
+    width: 44px;
+    height: 44px;
+    display: block;
+  }
+  .palette-trigger {
+    position: relative;
+    z-index: 2;
+  }
+  .palette-panel {
+    position: absolute;
+    right: 0;
+    top: auto;
+    bottom: calc(100% + 0.75rem);
+    display: grid;
+    grid-template-columns: repeat(4, 30px);
+    justify-content: end;
+    align-items: center;
+    gap: 0.65rem;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+    max-height: 0;
+    padding: 0 0.75rem;
+    border-radius: 18px;
+    transform: translateY(10px) scaleY(0.86);
+    transform-origin: bottom right;
+    transition: max-height 0.48s var(--ease-out),
+                opacity 0.35s var(--ease),
+                transform 0.48s var(--ease-out),
+                padding 0.48s var(--ease-out),
+                border-color 0.35s var(--ease);
+  }
+  .palette.open .palette-panel {
+    max-width: calc(100vw - 2rem);
+    max-height: 320px;
+    padding: 0.85rem;
+    border-radius: 18px;
+    transform: none;
+  }
+  .palette-panel .theme-toggle {
+    grid-column: 4;
+    justify-self: end;
+    width: 32px;
+    height: 32px;
+  }
+  .palette-panel .swatch {
+    width: 30px;
+    height: 30px;
+  }
+  .palette-panel .sep {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 1px;
+    margin: 0.05rem 0;
+  }
+  .swatch::after {
+    display: none;
+  }
 }
 
 /* ============================================================
