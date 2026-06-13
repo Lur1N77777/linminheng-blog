@@ -1,0 +1,40 @@
+name: 部署到 Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
+
+      - name: 安装依赖
+        working-directory: ./site
+        run: npm ci
+
+      - name: 构建站点
+        working-directory: ./site
+        run: npm run build
+
+      - name: 部署到 Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: daf84327e65089440b7f88f2a72d86e5
+          projectName: linminheng-blog
+          directory: site/dist
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
