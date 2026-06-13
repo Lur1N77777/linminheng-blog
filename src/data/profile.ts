@@ -1,0 +1,28 @@
+// 个人信息 —— 名字、头衔、tagline、社交链接、配色
+// 想改这些,改这个文件即可
+
+export const profile = {
+  name: 'LinMinheng',
+  title: '独立开发者 · 摄影师 · 学生',
+  tagline:
+    '这里是我的一方天地,互联网冲浪累了就回来歇歇脚。随手记下想法、晒晒在做的东西,也欢迎你停下来看看。',
+  foot: '黄昏书房 · 一方天地',
+
+  // 默认配色与明暗(首次访问时的初始值;访客切换后会被记住)
+  defaultPalette: 'amber', // amber|pine|terra|indigo|heather|ink|stone|olive|onyx|claude|openai
+  defaultTheme: 'dark',    // dark | light
+
+  // 社交链接:留空字符串 '' 则该图标不显示
+  socials: {
+    github: 'https://github.com/Lur1N77777',
+    instagram: '',
+    email: '',
+  },
+};
+
+// 「关于」正文:每个数组元素是一段;用 <strong> 包裹要强调的词
+export const about = [
+  '我是 <strong>LinMinheng</strong>。白天写代码,有光的时候按快门,剩下的时间在读书和发呆之间反复横跳。做这个网站不是为了什么 KPI,只是想在喧闹的互联网里,留一块<strong>安静的、完全属于自己的角落</strong>。',
+  '比起追逐热点,我更在意把一件小事做到细腻——一段干净的代码、一张恰到好处的光影、一句想了很久才写下的话。如果你恰好路过,泡杯茶,慢慢看就好。',
+  '这段文字、这些板块现在都还是占位的,等气质对味了,我会把真实的自己一点点填进来。',
+];

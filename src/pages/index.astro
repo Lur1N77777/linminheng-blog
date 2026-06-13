@@ -1,0 +1,182 @@
+---
+import Base from '../layouts/Base.astro';
+import { profile, about } from '../data/profile';
+import { experiences } from '../data/experiences';
+import { projects, githubProfile } from '../data/projects';
+import { sites } from '../data/sites';
+import { getCollection, render } from 'astro:content';
+
+// 博文:按日期倒序
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+// 把博文正文渲染成 HTML(支持 Markdown 加粗、段落等)
+// Astro 5 glob loader:用顶层 render(entry),不再是 entry.render()
+const rendered = await Promise.all(
+  posts.map(async (p) => {
+    const { Content } = await render(p);
+    return { ...p, Content };
+  })
+);
+
+// 格式化日期为 "2026 · 06 · 09"
+function fmtDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y} · ${m} · ${day}`;
+}
+
+const { socials } = profile;
+---
+
+<Base>
+  <!-- ================= 左:个人名片 ================= -->
+  <header class="col-left">
+    <div>
+      <h1 class="name" data-intro style="--i:0">{profile.name}</h1>
+      <p class="title" data-intro style="--i:1">{profile.title}</p>
+      <p class="tagline" data-intro style="--i:2">{profile.tagline}</p>
+
+      <nav id="nav">
+        <a class="nav-link" href="#about" data-intro style="--i:3"><span class="nav-line"></span>关于</a>
+        <a class="nav-link" href="#experience" data-intro style="--i:4"><span class="nav-line"></span>历程</a>
+        <a class="nav-link" href="#projects" data-intro style="--i:5"><span class="nav-line"></span>项目</a>
+        <a class="nav-link" href="#sites" data-intro style="--i:6"><span class="nav-line"></span>站点</a>
+        <a class="nav-link" href="#writing" data-intro style="--i:7"><span class="nav-line"></span>博文</a>
+      </nav>
+    </div>
+
+    <div>
+      <div class="socials" data-intro style="--i:8">
+        {socials.github && (
+          <a href={socials.github} target="_blank" rel="noopener" aria-label="GitHub" title="GitHub">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.8 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.5-3.9-1.5-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.3 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6 4.5-1.5 7.8-5.8 7.8-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+          </a>
+        )}
+        {socials.instagram && (
+          <a href={socials.instagram} target="_blank" rel="noopener" aria-label="Instagram" title="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+        )}
+        {socials.email && (
+          <a href={`mailto:${socials.email}`} aria-label="Email" title="邮箱">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          </a>
+        )}
+      </div>
+      <p class="foot" data-intro style="--i:9" set:html={profile.foot}></p>
+    </div>
+  </header>
+
+  <!-- ================= 右:内容流 ================= -->
+  <main class="col-right">
+
+    <!-- 关于 -->
+    <section id="about">
+      <div class="section-label">关于</div>
+      <div class="prose" data-reveal>
+        {about.map((para) => <p set:html={para}></p>)}
+      </div>
+    </section>
+
+    <!-- 历程 -->
+    <section id="experience">
+      <div class="section-label">历程</div>
+      <div class="cards">
+        {experiences.map((exp) => (
+          <a class="card row" data-reveal href={exp.href ?? '#'}>
+            <div class="card-meta">{exp.meta}</div>
+            <div>
+              <div class="card-title">{exp.title} <span class="arrow">↗</span></div>
+              <div class="card-desc">{exp.desc}</div>
+              <div class="tags">{exp.tags.map((t) => <span class="tag">{t}</span>)}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- 项目 -->
+    <section id="projects">
+      <div class="section-label">项目</div>
+      <div class="cards">
+        {projects.map((proj) => (
+          <a
+            class="card project"
+            data-reveal
+            href={proj.href}
+            target="_blank"
+            rel="noopener"
+            data-repo={proj.repo}
+            data-stars={proj.stars}
+          >
+            <div class="thumb">
+              {proj.logo ? <img src={proj.logo} alt={`${proj.name} logo`} loading="lazy" /> : proj.name}
+            </div>
+            <div>
+              <div class="card-title">{proj.name} <span class="arrow">↗</span></div>
+              <div class="card-desc">{proj.desc}</div>
+              <div class="tags">
+                {proj.repo && (
+                  <span class="tag star" title="GitHub Stars">★ <span class="star-num">{proj.stars}</span></span>
+                )}
+                {proj.tags.map((t) => <span class="tag">{t}</span>)}
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+      <p class="prose" style="margin-top:1.5rem" data-reveal>
+        <a class="link-accent" href={githubProfile} target="_blank" rel="noopener">在 GitHub 上看全部 →</a>
+      </p>
+    </section>
+
+    <!-- 站点 -->
+    <section id="sites">
+      <div class="section-label">站点</div>
+      <div class="cards">
+        {sites.map((site) => (
+          <a class="card project" data-reveal href={site.href} target="_blank" rel="noopener">
+            <div class="thumb">
+              {site.logo ? <img src={site.logo} alt={`${site.name} logo`} loading="lazy" /> : site.name}
+            </div>
+            <div>
+              <div class="card-title">{site.name} <span class="arrow">↗</span></div>
+              <div class="card-desc">{site.desc}</div>
+              <div class="tags">{site.tags.map((t) => <span class="tag">{t}</span>)}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <!-- 博文 -->
+    <section id="writing">
+      <div class="section-label">博文</div>
+      <div class="posts">
+        {rendered.map((post) => (
+          <article class="post" data-reveal>
+            <button class="post-head" aria-expanded="false">
+              <div class="post-main">
+                <div class="post-date">{fmtDate(post.data.date)}</div>
+                <h3 class="post-title">{post.data.title}</h3>
+                <p class="post-excerpt">{post.data.excerpt}</p>
+                <div class="post-tags">{post.data.tags.map((t) => <span class="tag">{t}</span>)}</div>
+              </div>{/* post-date 放在 post-main 内,grid 两列布局不受影响 */}
+              <span class="post-toggle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+            </button>
+            <div class="post-body">
+              <div class="post-body-inner prose">
+                <post.Content />
+                {post.data.foot && <p class="post-foot">{post.data.foot}</p>}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+  </main>
+</Base>
