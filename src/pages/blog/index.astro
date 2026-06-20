@@ -5,6 +5,8 @@ import { richText } from '../../utils/richText';
 import { formatPostDate, getPostUrl, getPublishedPosts, getReadingTime } from '../../utils/posts';
 
 const posts = await getPublishedPosts();
+const years = Array.from(new Set(posts.map((post) => post.data.date.getFullYear()))).sort((a, b) => b - a);
+const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).sort((a, b) => a.localeCompare(b, 'zh-CN'));
 ---
 
 <Base
@@ -23,9 +25,50 @@ const posts = await getPublishedPosts();
       <p class="page-desc">一些项目记录、日常想法和慢慢整理出来的文字。</p>
     </header>
 
-    <section class="archive-list" aria-label="全部文章">
+    <section class="archive-tools" aria-label="筛选文章" data-intro style="--i:1">
+      <label class="archive-search">
+        <span>搜索文章</span>
+        <input
+          type="search"
+          placeholder="搜索标题、摘要或标签"
+          autocomplete="off"
+          data-post-search
+        />
+      </label>
+
+      <div class="archive-filter-group" data-filter-group="year" aria-label="按年份筛选">
+        <span class="archive-filter-label">年份</span>
+        <button class="filter-chip active" type="button" data-filter-value="all" aria-pressed="true">全部</button>
+        {years.map((year) => (
+          <button class="filter-chip" type="button" data-filter-value={String(year)} aria-pressed="false">{year}</button>
+        ))}
+      </div>
+
+      <div class="archive-filter-group" data-filter-group="tag" aria-label="按标签筛选">
+        <span class="archive-filter-label">标签</span>
+        <button class="filter-chip active" type="button" data-filter-value="all" aria-pressed="true">全部</button>
+        {tags.map((tag) => (
+          <button class="filter-chip" type="button" data-filter-value={tag} aria-pressed="false">{tag}</button>
+        ))}
+      </div>
+
+      <div class="archive-status">
+        <span data-result-count>共 {posts.length} 篇</span>
+        <button class="archive-reset" type="button" data-reset-filters>清除筛选</button>
+      </div>
+    </section>
+
+    <section class="archive-list" aria-label="全部文章" data-post-list>
       {posts.map((post, index) => (
-        <article class="archive-item" data-reveal style={`--i:${index}`}>
+        <article
+          class="archive-item"
+          data-reveal
+          data-post-item
+          data-year={String(post.data.date.getFullYear())}
+          data-tags={post.data.tags.join(',')}
+          data-search={`${post.data.title} ${post.data.excerpt} ${post.data.tags.join(' ')}`.toLowerCase()}
+          style={`--i:${index}`}
+        >
           <a class="archive-link" href={getPostUrl(post)}>
             <div class="archive-meta">
               <span>{formatPostDate(post.data.date)}</span>
@@ -40,5 +83,88 @@ const posts = await getPublishedPosts();
         </article>
       ))}
     </section>
+
+    <p class="archive-empty" data-empty-state hidden>没有找到对应文章。</p>
   </main>
+
+  <script>
+    const searchInput = document.querySelector('[data-post-search]');
+    const items = Array.from(document.querySelectorAll('[data-post-item]'));
+    const countEl = document.querySelector('[data-result-count]');
+    const emptyEl = document.querySelector('[data-empty-state]');
+    const resetButton = document.querySelector('[data-reset-filters]');
+    const state = { year: 'all', tag: 'all', query: '' };
+
+    function setActive(group, value) {
+      document.querySelectorAll(`[data-filter-group="${group}"] .filter-chip`).forEach((button) => {
+        const active = button.getAttribute('data-filter-value') === value;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+
+    function syncUrl() {
+      const params = new URLSearchParams();
+      if (state.query) params.set('q', state.query);
+      if (state.year !== 'all') params.set('year', state.year);
+      if (state.tag !== 'all') params.set('tag', state.tag);
+      const next = params.toString() ? `${location.pathname}?${params}` : location.pathname;
+      history.replaceState(null, '', next);
+    }
+
+    function applyFilters() {
+      const query = state.query.trim().toLowerCase();
+      let visible = 0;
+
+      items.forEach((item) => {
+        const yearOk = state.year === 'all' || item.getAttribute('data-year') === state.year;
+        const tagOk = state.tag === 'all' || (item.getAttribute('data-tags') || '').split(',').includes(state.tag);
+        const queryOk = !query || (item.getAttribute('data-search') || '').includes(query);
+        const show = yearOk && tagOk && queryOk;
+
+        item.hidden = !show;
+        if (show) visible += 1;
+      });
+
+      if (countEl) countEl.textContent = `找到 ${visible} 篇`;
+      if (emptyEl) emptyEl.hidden = visible > 0;
+      syncUrl();
+    }
+
+    document.querySelectorAll('[data-filter-group]').forEach((groupEl) => {
+      const group = groupEl.getAttribute('data-filter-group');
+      groupEl.querySelectorAll('.filter-chip').forEach((button) => {
+        button.addEventListener('click', () => {
+          if (!group) return;
+          state[group] = button.getAttribute('data-filter-value') || 'all';
+          setActive(group, state[group]);
+          applyFilters();
+        });
+      });
+    });
+
+    searchInput?.addEventListener('input', () => {
+      state.query = searchInput.value || '';
+      applyFilters();
+    });
+
+    resetButton?.addEventListener('click', () => {
+      state.year = 'all';
+      state.tag = 'all';
+      state.query = '';
+      if (searchInput) searchInput.value = '';
+      setActive('year', 'all');
+      setActive('tag', 'all');
+      applyFilters();
+    });
+
+    const params = new URLSearchParams(location.search);
+    state.query = params.get('q') || '';
+    state.year = params.get('year') || 'all';
+    state.tag = params.get('tag') || 'all';
+    if (searchInput) searchInput.value = state.query;
+    setActive('year', state.year);
+    setActive('tag', state.tag);
+    applyFilters();
+  </script>
 </Base>
