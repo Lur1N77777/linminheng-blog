@@ -1,0 +1,121 @@
+name: New blog post
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 文章标题
+        required: true
+        type: string
+      slug:
+        description: 文件名 slug, 留空自动生成
+        required: false
+        type: string
+      tags:
+        description: 标签, 用逗号分隔
+        required: false
+        default: 随笔
+        type: string
+      excerpt:
+        description: 摘要
+        required: false
+        default: 这里写文章摘要。
+        type: string
+      draft:
+        description: 是否保存为草稿
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create markdown file
+        shell: bash
+        env:
+          TITLE: ${{ inputs.title }}
+          SLUG_INPUT: ${{ inputs.slug }}
+          TAGS_INPUT: ${{ inputs.tags }}
+          EXCERPT: ${{ inputs.excerpt }}
+          DRAFT: ${{ inputs.draft }}
+        run: |
+          set -euo pipefail
+
+          date="$(date +%F)"
+          slug="$SLUG_INPUT"
+          if [ -z "$slug" ]; then
+            slug="$(printf '%s' "$TITLE" \
+              | tr '[:upper:]' '[:lower:]' \
+              | sed -E 's/["'"'"']//g; s/[^a-z0-9]+/-/g; s/^-+|-+$//g')"
+          fi
+          if [ -z "$slug" ]; then
+            slug="untitled"
+          fi
+
+          dir="src/content/blog"
+          mkdir -p "$dir"
+
+          file="$dir/$date-$slug.md"
+          counter=2
+          while [ -e "$file" ]; do
+            file="$dir/$date-$slug-$counter.md"
+            counter=$((counter + 1))
+          done
+
+          tags_json="$(printf '%s' "$TAGS_INPUT" \
+            | sed 's/，/,/g' \
+            | awk -F',' '{
+                printf "[";
+                first=1;
+                for (i=1;i<=NF;i++) {
+                  gsub(/^[ \t]+|[ \t]+$/, "", $i);
+                  if ($i != "") {
+                    gsub(/"/, "\\\"", $i);
+                    if (!first) printf ", ";
+                    printf "\"" $i "\"";
+                    first=0;
+                  }
+                }
+                printf "]";
+              }')"
+          if [ "$tags_json" = "[]" ]; then
+            tags_json='["随笔"]'
+          fi
+
+          esc_title="${TITLE//\\/\\\\}"
+          esc_title="${esc_title//\"/\\\"}"
+          esc_excerpt="${EXCERPT//\\/\\\\}"
+          esc_excerpt="${esc_excerpt//\"/\\\"}"
+
+          cat > "$file" <<EOF
+          ---
+          title: "$esc_title"
+          date: $date
+          tags: $tags_json
+          excerpt: "$esc_excerpt"
+          draft: $DRAFT
+          ---
+
+          正文从这里开始。
+          EOF
+
+          sed -i 's/^          //' "$file"
+          echo "file=$file" >> "$GITHUB_ENV"
+
+      - name: Commit new post
+        env:
+          TITLE: ${{ inputs.title }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$file"
+          git commit -m "docs: 新建博文《$TITLE》"
+          git push

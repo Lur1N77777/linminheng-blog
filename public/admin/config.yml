@@ -1,0 +1,101 @@
+backend:
+  name: github
+  repo: Lur1N77777/linminheng-blog
+  branch: main
+
+media_folder: public/assets
+public_folder: /assets
+
+collections:
+  - name: blog
+    label: 博文
+    folder: src/content/blog
+    create: true
+    extension: md
+    format: frontmatter
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: 标题, name: title, widget: string }
+      - { label: 日期, name: date, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }
+      - { label: 更新日期, name: updated, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD", required: false }
+      - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
+      - { label: 摘要, name: excerpt, widget: text }
+      - { label: 草稿, name: draft, widget: boolean, default: true }
+      - { label: 封面图, name: cover, widget: image, required: false }
+      - { label: 结尾小字, name: foot, widget: string, required: false }
+      - { label: 正文, name: body, widget: markdown }
+
+  - name: data
+    label: 页面信息
+    files:
+      - name: profile
+        label: 个人资料
+        file: src/data/content/profile.json
+        format: json
+        fields:
+          - label: 个人资料
+            name: profile
+            widget: object
+            fields:
+              - { label: 名字, name: name, widget: string }
+              - { label: 副标题, name: title, widget: string }
+              - { label: 首页简介, name: tagline, widget: text }
+              - { label: 页脚小字, name: foot, widget: string }
+              - { label: 默认配色, name: defaultPalette, widget: select, options: [amber, pine, terra, indigo, heather, ink, stone, olive, onyx, claude, openai] }
+              - { label: 默认明暗, name: defaultTheme, widget: select, options: [dark, light] }
+              - label: 社交链接
+                name: socials
+                widget: object
+                fields:
+                  - { label: GitHub, name: github, widget: string, required: false }
+                  - { label: Instagram, name: instagram, widget: string, required: false }
+                  - { label: 邮箱, name: email, widget: string, required: false }
+          - { label: 自我介绍段落, name: about, widget: list, field: { label: 段落, name: paragraph, widget: text } }
+
+      - name: projects
+        label: 项目
+        file: src/data/content/projects.json
+        format: json
+        fields:
+          - { label: GitHub 主页, name: githubProfile, widget: string }
+          - label: 项目列表
+            name: projects
+            widget: list
+            fields:
+              - { label: 名称, name: name, widget: string }
+              - { label: 链接, name: href, widget: string }
+              - { label: GitHub Repo, name: repo, widget: string, required: false }
+              - { label: 兜底 Star 数, name: stars, widget: number, value_type: int, default: 0, required: false }
+              - { label: 简介, name: desc, widget: text }
+              - { label: Logo, name: logo, widget: image, required: false }
+              - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
+
+      - name: sites
+        label: 站点
+        file: src/data/content/sites.json
+        format: json
+        fields:
+          - label: 站点列表
+            name: sites
+            widget: list
+            fields:
+              - { label: 名称, name: name, widget: string }
+              - { label: 链接, name: href, widget: string }
+              - { label: 简介, name: desc, widget: text }
+              - { label: Logo, name: logo, widget: image, required: false }
+              - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
+
+      - name: experiences
+        label: 历程
+        file: src/data/content/experiences.json
+        format: json
+        fields:
+          - label: 历程列表
+            name: experiences
+            widget: list
+            fields:
+              - { label: 时间, name: meta, widget: string }
+              - { label: 标题, name: title, widget: string }
+              - { label: 描述, name: desc, widget: text }
+              - { label: 链接, name: href, widget: string, required: false }
+              - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }

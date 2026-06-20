@@ -1,0 +1,297 @@
+---
+const title = '内容管理 · 一方天地';
+const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca1762706de13';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #11100e;
+        --panel: rgba(247, 241, 230, 0.075);
+        --panel-strong: rgba(247, 241, 230, 0.12);
+        --line: rgba(247, 241, 230, 0.18);
+        --text: #f4eadc;
+        --muted: rgba(244, 234, 220, 0.64);
+        --faint: rgba(244, 234, 220, 0.42);
+        --accent: #d9a860;
+        --accent-strong: #f0c783;
+        --danger: #ffb0a6;
+        --radius: 8px;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        overflow-x: hidden;
+        background:
+          radial-gradient(circle at 18% 12%, rgba(217, 168, 96, 0.18), transparent 34rem),
+          linear-gradient(135deg, #11100e 0%, #171512 46%, #0f1412 100%);
+        color: var(--text);
+      }
+
+      body.unlocked {
+        display: block;
+        background: #0f0f0f;
+      }
+
+      .gate {
+        width: min(92vw, 420px);
+        padding: 1.15rem;
+      }
+
+      .gate-card {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: color-mix(in srgb, var(--panel) 72%, transparent);
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+        backdrop-filter: blur(22px);
+      }
+
+      .gate-head {
+        padding: 1.35rem 1.35rem 1rem;
+        border-bottom: 1px solid rgba(247, 241, 230, 0.1);
+      }
+
+      .eyebrow {
+        margin: 0 0 0.5rem;
+        color: var(--accent-strong);
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(1.55rem, 5vw, 2.1rem);
+        font-weight: 520;
+        letter-spacing: 0;
+      }
+
+      .desc {
+        margin: 0.72rem 0 0;
+        color: var(--muted);
+        font-size: 0.92rem;
+        line-height: 1.75;
+      }
+
+      .gate-form {
+        display: grid;
+        gap: 0.85rem;
+        padding: 1.1rem 1.35rem 1.35rem;
+      }
+
+      label {
+        display: grid;
+        gap: 0.45rem;
+        color: var(--faint);
+        font-size: 0.78rem;
+      }
+
+      input,
+      button {
+        width: 100%;
+        min-height: 46px;
+        border-radius: var(--radius);
+        font: inherit;
+      }
+
+      input {
+        border: 1px solid rgba(247, 241, 230, 0.18);
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--text);
+        outline: none;
+        padding: 0 0.85rem;
+        transition:
+          border-color 180ms ease,
+          background 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      input:focus {
+        border-color: rgba(240, 199, 131, 0.72);
+        background: rgba(0, 0, 0, 0.28);
+        box-shadow: 0 0 0 3px rgba(240, 199, 131, 0.14);
+      }
+
+      button {
+        border: 1px solid rgba(240, 199, 131, 0.45);
+        background: linear-gradient(180deg, #e8bb74, #c98f45);
+        color: #17100a;
+        cursor: pointer;
+        font-weight: 650;
+        transition:
+          transform 180ms ease,
+          filter 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      button:hover {
+        filter: brightness(1.04);
+        box-shadow: 0 12px 28px rgba(217, 168, 96, 0.2);
+        transform: translateY(-1px);
+      }
+
+      button:disabled {
+        cursor: wait;
+        filter: grayscale(0.25);
+        transform: none;
+      }
+
+      .status {
+        min-height: 1.3em;
+        margin: 0;
+        color: var(--faint);
+        font-size: 0.8rem;
+        line-height: 1.6;
+      }
+
+      .status.error {
+        color: var(--danger);
+      }
+
+      .cms-loading {
+        display: none;
+        min-height: 100vh;
+        place-items: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      body.loading-cms .gate {
+        display: none;
+      }
+
+      body.loading-cms .cms-loading {
+        display: grid;
+      }
+
+      @media (max-width: 520px) {
+        .gate {
+          width: 100%;
+          padding: 1rem;
+        }
+
+        .gate-head,
+        .gate-form {
+          padding-left: 1rem;
+          padding-right: 1rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="gate" data-gate>
+      <section class="gate-card" aria-labelledby="admin-title">
+        <div class="gate-head">
+          <p class="eyebrow">Admin</p>
+          <h1 id="admin-title">内容管理</h1>
+          <p class="desc">输入后台入口密码后进入内容编辑器。保存文章、项目和个人资料时仍需要 GitHub 授权。</p>
+        </div>
+
+        <form class="gate-form" data-form>
+          <label>
+            管理员密码
+            <input data-password type="password" autocomplete="current-password" placeholder="输入后台密码" />
+          </label>
+          <button data-submit type="submit">进入后台</button>
+          <p class="status" data-status aria-live="polite"></p>
+        </form>
+      </section>
+    </main>
+
+    <div class="cms-loading" data-loading>正在进入内容管理...</div>
+
+    <script define:vars={{ passwordHash }} is:inline>
+      const sessionKey = 'yftd-admin-unlocked';
+      const form = document.querySelector('[data-form]');
+      const input = document.querySelector('[data-password]');
+      const submit = document.querySelector('[data-submit]');
+      const status = document.querySelector('[data-status]');
+
+      async function sha256(text) {
+        const bytes = new TextEncoder().encode(text);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return Array.from(new Uint8Array(digest))
+          .map((byte) => byte.toString(16).padStart(2, '0'))
+          .join('');
+      }
+
+      function setStatus(message, isError = false) {
+        if (!status) return;
+        status.textContent = message;
+        status.classList.toggle('error', isError);
+      }
+
+      function loadCms() {
+        document.body.classList.add('loading-cms', 'unlocked');
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js';
+        script.async = true;
+        script.addEventListener('error', () => {
+          document.body.classList.remove('loading-cms');
+          setStatus('内容编辑器加载失败，请检查网络后刷新重试。', true);
+        });
+        document.body.appendChild(script);
+      }
+
+      if (sessionStorage.getItem(sessionKey) === '1') {
+        loadCms();
+      }
+
+      form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const value = input?.value || '';
+
+        if (!value.trim()) {
+          setStatus('请输入管理员密码。', true);
+          input?.focus();
+          return;
+        }
+
+        submit.disabled = true;
+        setStatus('正在验证...');
+
+        try {
+          const hash = await sha256(value);
+          if (hash !== passwordHash) {
+            setStatus('密码不对，请重新输入。', true);
+            input?.select();
+            return;
+          }
+
+          sessionStorage.setItem(sessionKey, '1');
+          setStatus('验证通过，正在加载后台...');
+          loadCms();
+        } catch (error) {
+          setStatus('当前浏览器不支持安全校验，请换一个现代浏览器。', true);
+        } finally {
+          submit.disabled = false;
+        }
+      });
+    </script>
+  </body>
+</html>

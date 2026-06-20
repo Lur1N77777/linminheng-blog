@@ -1,11 +1,16 @@
 ---
 import '../styles/global.css';
-import { profile } from '../data/profile';
+import { profile as fallbackProfile, type Profile } from '../data/profile';
 
 interface Props {
   title?: string;
   description?: string;
+  profile?: Profile;
 }
+
+const {
+  profile = fallbackProfile,
+} = Astro.props;
 
 const {
   title = `${profile.name} — 一方天地`,
@@ -20,6 +25,7 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="icon" href="/assets/loven7-logo.svg" type="image/svg+xml" />
 
     <!-- 字体:Fraunces 做标题,Inter 做正文,加载失败优雅回退到系统字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -57,28 +63,23 @@ const {
       </button>
       <div class="palette-panel" id="palettePanel" role="group" aria-label="配色方案">
         <button class="theme-toggle" id="themeToggle" type="button" aria-label="切换明暗" title="切换明暗">
-          <!-- 太阳(浅色时显示) -->
           <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
             <circle cx="12" cy="12" r="4" />
             <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
           </svg>
-          <!-- 月亮(深色时显示) -->
           <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
           </svg>
         </button>
-        <span class="sep" aria-hidden="true"></span>
         <button class="swatch" type="button" data-p="amber" data-name="黄昏书房" aria-label="黄昏书房" title="黄昏书房 · 琥珀金"></button>
         <button class="swatch" type="button" data-p="pine" data-name="松林雾隐" aria-label="松林雾隐" title="松林雾隐 · 墨绿暖灰"></button>
         <button class="swatch" type="button" data-p="terra" data-name="赤陶暮色" aria-label="赤陶暮色" title="赤陶暮色 · 陶土赭石"></button>
         <button class="swatch" type="button" data-p="indigo" data-name="靛蓝旧纸" aria-label="靛蓝旧纸" title="靛蓝旧纸 · 沉静书卷"></button>
         <button class="swatch" type="button" data-p="heather" data-name="石楠紫灰" aria-label="石楠紫灰" title="石楠紫灰 · 雾霾紫"></button>
-        <span class="sep" aria-hidden="true"></span>
         <button class="swatch" type="button" data-p="ink" data-name="墨白宣纸" aria-label="墨白宣纸" title="墨白宣纸 · 朱砂点睛"></button>
         <button class="swatch" type="button" data-p="stone" data-name="裸灰画廊" aria-label="裸灰画廊" title="裸灰画廊 · 香槟铜"></button>
         <button class="swatch" type="button" data-p="olive" data-name="暗橄榄" aria-label="暗橄榄" title="暗橄榄 · 暖卡其"></button>
         <button class="swatch" type="button" data-p="onyx" data-name="碳金" aria-label="碳金" title="碳金 · 高对比哑金"></button>
-        <span class="sep" aria-hidden="true"></span>
         <button class="swatch" type="button" data-p="claude" data-name="Claude" aria-label="Claude" title="Claude · 陶土暖橙"></button>
         <button class="swatch" type="button" data-p="openai" data-name="OpenAI" aria-label="OpenAI" title="OpenAI · 墨黑薄荷"></button>
       </div>
@@ -91,130 +92,148 @@ const {
     </div>
 
     <script>
-      // ===== 明暗 + 配色切换(均记忆选择)=====
       const root = document.documentElement;
-      const toggle = document.getElementById('themeToggle')!;
+      const storage = {
+        get(key) {
+          try { return localStorage.getItem(key); } catch { return null; }
+        },
+        set(key, value) {
+          try { localStorage.setItem(key, value); } catch {}
+        },
+        json(key) {
+          try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
+        },
+      };
 
-      // 明暗切换(初始值已由 head 内联脚本应用,这里只处理点击)
+      const themeToggle = document.getElementById('themeToggle');
+      const palette = document.getElementById('palette');
+      const paletteTrigger = document.getElementById('paletteTrigger');
+      const swatches = Array.from(document.querySelectorAll('.swatch'));
+
       function syncThemeToggleLabel() {
-        const isDark = root.getAttribute('data-theme') === 'dark';
-        const label = isDark ? '切换到浅色模式' : '切换到深色模式';
-        toggle.setAttribute('aria-label', label);
-        toggle.setAttribute('title', label);
+        if (!themeToggle) return;
+        const label = root.getAttribute('data-theme') === 'dark' ? '切换到浅色模式' : '切换到深色模式';
+        themeToggle.setAttribute('aria-label', label);
+        themeToggle.setAttribute('title', label);
       }
-      syncThemeToggleLabel();
-      toggle.addEventListener('click', () => {
+
+      function syncSwatchActive() {
+        const current = root.getAttribute('data-palette');
+        swatches.forEach((swatch) => {
+          const active = swatch.getAttribute('data-p') === current;
+          swatch.classList.toggle('active', active);
+          swatch.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+      }
+
+      themeToggle?.addEventListener('click', () => {
         const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         root.setAttribute('data-theme', next);
-        localStorage.setItem('theme', next);
+        storage.set('theme', next);
         syncThemeToggleLabel();
       });
 
-      // 配色切换:点色卡换整站配色
-      const palette = document.getElementById('palette')!;
-      const paletteTrigger = document.getElementById('paletteTrigger')!;
-      const swatches = [...document.querySelectorAll<HTMLElement>('.swatch')];
-      function syncSwatchActive() {
-        const cur = root.getAttribute('data-palette');
-        swatches.forEach((s) => {
-          const active = s.dataset.p === cur;
-          s.classList.toggle('active', active);
-          s.setAttribute('aria-pressed', active ? 'true' : 'false');
-        });
-      }
-      swatches.forEach((s) => {
-        s.addEventListener('click', () => {
-          const p = s.dataset.p!;
-          root.setAttribute('data-palette', p);
-          localStorage.setItem('palette', p);
+      swatches.forEach((swatch) => {
+        swatch.addEventListener('click', () => {
+          const next = swatch.getAttribute('data-p');
+          if (!next) return;
+          root.setAttribute('data-palette', next);
+          storage.set('palette', next);
           syncSwatchActive();
         });
       });
-      syncSwatchActive();
 
-      // 配色面板:点调色盘图标展开 / 收起,点面板外或按 Esc 收起
-      function setPaletteOpen(open: boolean) {
+      function setPaletteOpen(open) {
+        if (!palette || !paletteTrigger) return;
         palette.classList.toggle('open', open);
         paletteTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
       }
-      paletteTrigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setPaletteOpen(!palette.classList.contains('open'));
+
+      paletteTrigger?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setPaletteOpen(!palette?.classList.contains('open'));
       });
-      document.addEventListener('click', (e) => {
-        if (!palette.contains(e.target as Node)) setPaletteOpen(false);
+      document.addEventListener('click', (event) => {
+        if (palette && !palette.contains(event.target)) setPaletteOpen(false);
       });
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') setPaletteOpen(false);
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setPaletteOpen(false);
       });
 
-      // ===== 鼠标暖光晕跟随 =====
-      const spotlight = document.querySelector<HTMLElement>('.spotlight')!;
-      let tx = 0, ty = 0, cx = 0, cy = 0;
-      window.addEventListener('mousemove', (e) => { tx = e.clientX; ty = e.clientY; });
-      (function loop() {
-        cx += (tx - cx) * 0.12;
-        cy += (ty - cy) * 0.12;
-        spotlight.style.setProperty('--mx', cx + 'px');
-        spotlight.style.setProperty('--my', cy + 'px');
-        requestAnimationFrame(loop);
-      })();
+      syncThemeToggleLabel();
+      syncSwatchActive();
 
-      // ===== 滚动导航联动高亮 =====
-      const navLinks = [...document.querySelectorAll<HTMLElement>('.nav-link')];
-      const sections = [...document.querySelectorAll<HTMLElement>('section[id]')];
-      const spy = new IntersectionObserver((entries) => {
-        entries.forEach((en) => {
-          if (en.isIntersecting) {
-            const id = en.target.id;
-            navLinks.forEach((l) =>
-              l.classList.toggle('active', l.getAttribute('href') === '#' + id)
-            );
-          }
+      const spotlight = document.querySelector('.spotlight');
+      const canTrackPointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+      if (spotlight && canTrackPointer) {
+        let tx = 0, ty = 0, cx = 0, cy = 0;
+        window.addEventListener('mousemove', (event) => {
+          tx = event.clientX;
+          ty = event.clientY;
+        }, { passive: true });
+        (function loop() {
+          cx += (tx - cx) * 0.12;
+          cy += (ty - cy) * 0.12;
+          spotlight.style.setProperty('--mx', cx + 'px');
+          spotlight.style.setProperty('--my', cy + 'px');
+          requestAnimationFrame(loop);
+        })();
+      }
+
+      const navLinks = Array.from(document.querySelectorAll('.nav-link'));
+      const sections = Array.from(document.querySelectorAll('section[id]'));
+      if ('IntersectionObserver' in window) {
+        const spy = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const id = entry.target.id;
+            navLinks.forEach((link) => {
+              link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+            });
+          });
+        }, { rootMargin: '-45% 0px -50% 0px' });
+        sections.forEach((section) => spy.observe(section));
+
+        const revealer = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('in');
+            revealer.unobserve(entry.target);
+          });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('[data-reveal]').forEach((el, index) => {
+          el.style.transitionDelay = (index % 4) * 0.06 + 's';
+          revealer.observe(el);
         });
-      }, { rootMargin: '-45% 0px -50% 0px' });
-      sections.forEach((s) => spy.observe(s));
+      } else {
+        document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('in'));
+      }
 
-      // ===== 进场 reveal =====
-      const revealer = new IntersectionObserver((entries) => {
-        entries.forEach((en) => {
-          if (en.isIntersecting) { en.target.classList.add('in'); revealer.unobserve(en.target); }
-        });
-      }, { threshold: 0.15 });
-      document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el, i) => {
-        el.style.transitionDelay = (i % 4) * 0.06 + 's';
-        revealer.observe(el);
-      });
-
-      // ===== 博文:点标题原地丝滑展开 / 折叠(纯 CSS grid 过渡驱动,JS 只切 class)=====
-      document.querySelectorAll<HTMLElement>('.post-head').forEach((head) => {
+      document.querySelectorAll('.post-head').forEach((head) => {
         head.addEventListener('click', () => {
-          const article = head.closest('.post')!;
+          const article = head.closest('.post');
+          if (!article) return;
           const open = article.classList.toggle('open');
           head.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
       });
 
-      // ===== 实时 GitHub 星标:页面打开即同步,网页随星数变化 =====
-      // 策略:本地缓存 1 小时 → 过期则请求 GitHub 公开 API → 失败回退到写死的已知星数,绝不空白
       (function syncStars() {
-        const CACHE_TTL = 60 * 60 * 1000; // 1 小时
-        document.querySelectorAll<HTMLElement>('.card.project[data-repo]').forEach(async (card) => {
+        const CACHE_TTL = 60 * 60 * 1000;
+        document.querySelectorAll('.card.project[data-repo]').forEach(async (card) => {
           const repo = card.getAttribute('data-repo');
-          const numEl = card.querySelector<HTMLElement>('.star-num');
-          const badge = card.querySelector<HTMLElement>('.tag.star');
+          const numEl = card.querySelector('.star-num');
+          const badge = card.querySelector('.tag.star');
           if (!repo || !numEl) return;
 
           const cacheKey = 'stars:' + repo;
-          try {
-            const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
-            if (cached && Date.now() - cached.t < CACHE_TTL) {
-              render(cached.n);
-              return;
-            }
-          } catch (e) { /* 缓存损坏,忽略,走网络 */ }
+          const cached = storage.json(cacheKey);
+          if (cached && Date.now() - cached.t < CACHE_TTL) {
+            render(cached.n);
+            return;
+          }
 
-          badge && badge.classList.add('updating');
+          badge?.classList.add('updating');
           try {
             const res = await fetch('https://api.github.com/repos/' + repo, {
               headers: { 'Accept': 'application/vnd.github+json' },
@@ -223,22 +242,22 @@ const {
             const data = await res.json();
             const n = data.stargazers_count;
             if (typeof n === 'number') {
-              localStorage.setItem(cacheKey, JSON.stringify({ n, t: Date.now() }));
+              storage.set(cacheKey, JSON.stringify({ n, t: Date.now() }));
               render(n);
             }
-          } catch (e: any) {
-            console.warn('星标同步失败(已回退到本地数字):', repo, e.message);
+          } catch (error) {
+            console.warn('星标同步失败(已回退到本地数字):', repo, error);
           } finally {
-            badge && badge.classList.remove('updating');
+            badge?.classList.remove('updating');
           }
 
-          function render(n: number) {
-            const old = parseInt(numEl!.textContent || '', 10);
-            numEl!.textContent = String(n);
+          function render(n) {
+            const old = parseInt(numEl.textContent || '', 10);
+            numEl.textContent = String(n);
             if (!Number.isNaN(old) && old !== n) {
-              numEl!.classList.remove('bump');
-              void numEl!.offsetWidth;
-              numEl!.classList.add('bump');
+              numEl.classList.remove('bump');
+              void numEl.offsetWidth;
+              numEl.classList.add('bump');
             }
           }
         });

@@ -1,4 +1,4 @@
-name: 部署到 Cloudflare Pages
+name: Deploy to Cloudflare Pages
 
 on:
   push:
@@ -11,24 +11,25 @@ jobs:
     permissions:
       contents: read
       deployments: write
+
     steps:
-      - name: 检出代码
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 安装 Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: 安装依赖
+      - name: Install dependencies
         run: npm ci
 
-      - name: 构建站点
+      - name: Build
         run: npm run build
 
-      - name: 部署到 Cloudflare Pages
+      - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

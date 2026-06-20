@@ -1,0 +1,24 @@
+{
+  "githubProfile": "https://github.com/Lur1N77777",
+  "projects": [
+    {
+      "name": "CloudMail",
+      "href": "https://github.com/Lur1N77777/CloudMail",
+      "repo": "Lur1N77777/CloudMail",
+      "stars": 14,
+      "desc": "面向 Cloudflare 临时邮箱的 Expo React Native Android 管理 App,把 webmail 装进口袋里随手管。",
+      "logo": "/assets/cloudmail-logo.png",
+      "tags": ["TypeScript", "Expo", "React Native"]
+    },
+    {
+      "name": "loven7-mail-cloudflare-suite",
+      "href": "https://github.com/Lur1N77777/loven7-mail-cloudflare-suite",
+      "repo": "Lur1N77777/loven7-mail-cloudflare-suite",
+      "stars": 9,
+      "desc": "为 Cloudflare Temp Mail 打造的增强版管理后台与 webmail 前端,界面更顺手、功能更全。",
+      "logo": "/assets/loven7-logo.svg",
+      "tags": ["TypeScript", "Cloudflare"]
+    }
+  ]
+}
+

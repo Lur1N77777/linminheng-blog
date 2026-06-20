@@ -13,14 +13,14 @@ call npm run build
 if errorlevel 1 (
   echo.
   echo X 构建失败!请检查上面的报错信息。
-  echo    通常是某个 .ts 文件的引号或逗号删错了。
+  echo    通常是某个 .json 文件的引号或逗号删错了。
   pause
   exit /b 1
 )
 
 echo.
 echo [2/2] 正在上传到 Cloudflare...
-call npx wrangler pages deploy dist --project-name=linminheng-blog --branch=main
+call npx wrangler pages deploy dist --project-name=linminheng-blog --branch=main --commit-dirty=true
 if errorlevel 1 (
   echo.
   echo X 上传失败!可能是网络问题,请检查梯子是否开着,然后重试。

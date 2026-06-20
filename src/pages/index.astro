@@ -1,27 +1,23 @@
 ---
-import Base from '../layouts/Base.astro';
-import { profile, about } from '../data/profile';
-import { experiences } from '../data/experiences';
-import { projects, githubProfile } from '../data/projects';
-import { sites } from '../data/sites';
 import { getCollection, render } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { experiences } from '../data/experiences';
+import { about, profile } from '../data/profile';
+import { githubProfile, projects } from '../data/projects';
+import { sites } from '../data/sites';
 
-// 博文:按日期倒序
-const posts = (await getCollection('blog')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
+const posts = await Promise.all(
+  blogEntries
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+    .map(async (entry) => {
+      const { Content } = await render(entry);
+      return { entry, Content };
+    })
 );
 
-// 把博文正文渲染成 HTML(支持 Markdown 加粗、段落等)
-// Astro 5 glob loader:用顶层 render(entry),不再是 entry.render()
-const rendered = await Promise.all(
-  posts.map(async (p) => {
-    const { Content } = await render(p);
-    return { ...p, Content };
-  })
-);
-
-// 格式化日期为 "2026 · 06 · 09"
-function fmtDate(d: Date): string {
+function fmtDate(value: Date): string {
+  const d = new Date(value);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -31,7 +27,7 @@ function fmtDate(d: Date): string {
 const { socials } = profile;
 ---
 
-<Base>
+<Base profile={profile}>
   <!-- ================= 左:个人名片 ================= -->
   <header class="col-left">
     <div>
@@ -67,6 +63,7 @@ const { socials } = profile;
         )}
       </div>
       <p class="foot" data-intro style="--i:9" set:html={profile.foot}></p>
+      <a class="admin-entry" href="/admin/" data-intro style="--i:10">内容管理</a>
     </div>
   </header>
 
@@ -156,9 +153,9 @@ const { socials } = profile;
     <section id="writing">
       <div class="section-label">博文</div>
       <div class="posts">
-        {rendered.map((post) => (
+        {posts.map(({ entry: post, Content }) => (
           <article class="post" data-reveal>
-            <button class="post-head" aria-expanded="false">
+            <button class="post-head" type="button" aria-expanded="false">
               <div class="post-main">
                 <div class="post-date">{fmtDate(post.data.date)}</div>
                 <h3 class="post-title">{post.data.title}</h3>
@@ -169,7 +166,7 @@ const { socials } = profile;
             </button>
             <div class="post-body">
               <div class="post-body-inner prose">
-                <post.Content />
+                <Content />
                 {post.data.foot && <p class="post-foot">{post.data.foot}</p>}
               </div>
             </div>
