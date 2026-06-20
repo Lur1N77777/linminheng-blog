@@ -50,6 +50,9 @@ const updated = post.data.updated ? formatPostDate(post.data.updated) : undefine
         <h1 class="article-title">{post.data.title}</h1>
         <p class="article-excerpt" set:html={richText(post.data.excerpt)}></p>
         <div class="post-tags">{post.data.tags.map((tag) => <span class="tag">{tag}</span>)}</div>
+        <p class="visitor-stat page-stat" data-visitor-stat hidden>
+          访客 <span data-visitor-count>--</span>
+        </p>
       </header>
 
       {post.data.cover && (

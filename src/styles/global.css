@@ -975,6 +975,19 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
 }
 @media (min-width: 1024px) { .foot { margin-top: 0; } }
 
+.visitor-stat {
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  line-height: 1.7;
+  margin-top: var(--space-2);
+}
+
+.page-stat {
+  margin-top: var(--space-4);
+}
+
 /* ============================================================
    单栏博客页面
    ============================================================ */

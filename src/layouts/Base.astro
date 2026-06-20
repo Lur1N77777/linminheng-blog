@@ -299,6 +299,30 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
         window.addEventListener('scroll', updateReadingProgress, { passive: true });
         window.addEventListener('resize', updateReadingProgress);
       }
+
+      (async function syncVisitorStats() {
+        const stats = Array.from(document.querySelectorAll('[data-visitor-stat]'));
+        if (!stats.length) return;
+
+        try {
+          const response = await fetch('/api/visitors', {
+            headers: { accept: 'application/json' },
+            cache: 'no-store',
+          });
+          const data = await response.json();
+
+          if (!data?.configured || typeof data.count !== 'number') return;
+
+          document.querySelectorAll('[data-visitor-count]').forEach((el) => {
+            el.textContent = new Intl.NumberFormat('zh-CN').format(data.count);
+          });
+          stats.forEach((el) => {
+            el.hidden = false;
+          });
+        } catch (error) {
+          console.warn('访客统计加载失败:', error);
+        }
+      })();
     </script>
   </body>
 </html>
