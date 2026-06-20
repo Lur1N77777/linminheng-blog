@@ -1,4 +1,5 @@
 const DEFAULT_SALT = 'linminheng-blog-visitors';
+const COUNT_KEY = 'stats:unique_visitors';
 
 function getClientIp(request) {
   const headers = request.headers;
@@ -59,19 +60,45 @@ async function readCount(db) {
   return Number(row?.value || 0);
 }
 
-export async function onRequestGet({ env, request }) {
-  if (!env.VISITOR_DB) {
-    return Response.json(
-      { ok: false, configured: false, count: null },
-      { headers: { 'cache-control': 'no-store' } },
-    );
+async function handleKvVisitors({ kv, visitorHash, now, userAgent }) {
+  const visitorKey = `visitor:${visitorHash}`;
+  const existing = await kv.get(visitorKey, 'json');
+  const isNewVisitor = !existing;
+
+  if (isNewVisitor) {
+    await kv.put(visitorKey, JSON.stringify({
+      firstSeen: now,
+      lastSeen: now,
+      visits: 1,
+      userAgent,
+    }));
+
+    const currentCount = Number(await kv.get(COUNT_KEY) || 0);
+    const nextCount = currentCount + 1;
+    await kv.put(COUNT_KEY, String(nextCount));
+
+    return {
+      counted: true,
+      count: nextCount,
+      storage: 'kv',
+    };
   }
 
-  const db = env.VISITOR_DB;
-  const now = new Date().toISOString();
-  const visitorHash = await hashVisitor(getClientIp(request), env.VISITOR_SALT || DEFAULT_SALT);
-  const userAgent = getUserAgent(request);
+  await kv.put(visitorKey, JSON.stringify({
+    firstSeen: existing.firstSeen || now,
+    lastSeen: now,
+    visits: Number(existing.visits || 0) + 1,
+    userAgent,
+  }));
 
+  return {
+    counted: false,
+    count: Number(await kv.get(COUNT_KEY) || 0),
+    storage: 'kv',
+  };
+}
+
+async function handleD1Visitors({ db, visitorHash, now, userAgent }) {
   await ensureSchema(db);
 
   const inserted = await db
@@ -103,12 +130,35 @@ export async function onRequestGet({ env, request }) {
       .run();
   }
 
+  return {
+    counted: isNewVisitor,
+    count: await readCount(db),
+    storage: 'd1',
+  };
+}
+
+export async function onRequestGet({ env, request }) {
+  if (!env.VISITOR_KV && !env.VISITOR_DB) {
+    return Response.json(
+      { ok: false, configured: false, count: null },
+      { headers: { 'cache-control': 'no-store' } },
+    );
+  }
+
+  const now = new Date().toISOString();
+  const visitorHash = await hashVisitor(getClientIp(request), env.VISITOR_SALT || DEFAULT_SALT);
+  const userAgent = getUserAgent(request);
+  const result = env.VISITOR_KV
+    ? await handleKvVisitors({ kv: env.VISITOR_KV, visitorHash, now, userAgent })
+    : await handleD1Visitors({ db: env.VISITOR_DB, visitorHash, now, userAgent });
+
   return Response.json(
     {
       ok: true,
       configured: true,
-      counted: isNewVisitor,
-      count: await readCount(db),
+      counted: result.counted,
+      count: result.count,
+      storage: result.storage,
     },
     { headers: { 'cache-control': 'no-store' } },
   );
