@@ -343,6 +343,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       function loadCms() {
         document.body.classList.add('loading-cms', 'unlocked');
         installCmsTheme();
+        installImagePasteEnhancer();
         relayStoredAuthMessage();
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js';
@@ -352,6 +353,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           document.body.classList.add('cms-ready');
           setTimeout(installCmsTheme, 0);
           setTimeout(installCmsTheme, 800);
+          installImagePasteEnhancer();
           relayStoredAuthMessage();
         });
         script.addEventListener('error', () => {
@@ -359,6 +361,49 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           setStatus('内容编辑器加载失败，请检查网络后刷新重试。', true);
         });
         document.body.appendChild(script);
+      }
+
+      function isImageUrl(value) {
+        return /^https?:\/\/\S+\.(?:png|jpe?g|gif|webp|avif)(?:[?#]\S*)?$/i.test(value.trim());
+      }
+
+      function getEditableTarget(target) {
+        if (!target || !(target instanceof Element)) return null;
+
+        if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+          return target;
+        }
+
+        return target.closest('[contenteditable="true"]');
+      }
+
+      function insertText(target, text) {
+        if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+          const start = target.selectionStart ?? target.value.length;
+          const end = target.selectionEnd ?? target.value.length;
+          target.setRangeText(text, start, end, 'end');
+          target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+          return;
+        }
+
+        target.focus();
+        document.execCommand('insertText', false, text);
+      }
+
+      function installImagePasteEnhancer() {
+        if (window.__blogImagePasteEnhancerInstalled) return;
+        window.__blogImagePasteEnhancerInstalled = true;
+
+        document.addEventListener('paste', (event) => {
+          const text = event.clipboardData?.getData('text/plain')?.trim() || '';
+          if (!isImageUrl(text)) return;
+
+          const target = getEditableTarget(event.target);
+          if (!target) return;
+
+          event.preventDefault();
+          insertText(target, `\n\n![图片](${text})\n\n`);
+        }, true);
       }
 
       function relayStoredAuthMessage() {
