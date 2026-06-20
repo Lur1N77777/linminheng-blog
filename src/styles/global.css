@@ -892,18 +892,3 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   margin-top: 1rem;
 }
 @media (min-width: 1024px) { .foot { margin-top: 0; } }
-
-.admin-entry {
-  display: inline-flex;
-  width: fit-content;
-  margin-top: 0.55rem;
-  color: var(--text-faint);
-  font-size: 0.76rem;
-  line-height: 1.6;
-  border-bottom: 1px solid transparent;
-  transition: color var(--speed) var(--ease), border-color var(--speed) var(--ease);
-}
-.admin-entry:hover {
-  color: var(--accent);
-  border-color: var(--accent-soft);
-}

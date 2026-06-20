@@ -1,6 +1,6 @@
 ---
 const title = '内容管理 · 一方天地';
-const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca1762706de13';
+const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44da45c81';
 ---
 
 <!doctype html>
@@ -232,7 +232,31 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
         font-size: 0.92rem;
       }
 
+      .sync-note {
+        position: fixed;
+        left: 1rem;
+        bottom: calc(1rem + env(safe-area-inset-bottom));
+        z-index: 2147483000;
+        display: none;
+        max-width: min(28rem, calc(100vw - 2rem));
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: #181612;
+        color: var(--muted);
+        padding: 0.72rem 0.85rem;
+        font-size: 0.78rem;
+        line-height: 1.55;
+      }
+
+      body.cms-ready .sync-note {
+        display: block;
+      }
+
       body.loading-cms .gate {
+        display: none;
+      }
+
+      body.cms-ready .gate {
         display: none;
       }
 
@@ -275,9 +299,11 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
     </main>
 
     <div class="cms-loading" data-loading>正在进入内容管理...</div>
+    <div class="sync-note" data-sync-note>保存后需要等待线上部署完成，通常 30-90 秒。主页已关闭缓存，部署完成后刷新即可看到新内容。</div>
 
     <script define:vars={{ passwordHash }} is:inline>
       const sessionKey = 'yftd-admin-unlocked';
+      const authBridgeKey = 'sveltia-cms-auth-message:github';
       const form = document.querySelector('[data-form]');
       const input = document.querySelector('[data-password]');
       const submit = document.querySelector('[data-submit]');
@@ -300,18 +326,46 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
       function loadCms() {
         document.body.classList.add('loading-cms', 'unlocked');
         installCmsTheme();
+        relayStoredAuthMessage();
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js';
         script.async = true;
         script.addEventListener('load', () => {
+          document.body.classList.remove('loading-cms');
+          document.body.classList.add('cms-ready');
           setTimeout(installCmsTheme, 0);
           setTimeout(installCmsTheme, 800);
+          relayStoredAuthMessage();
         });
         script.addEventListener('error', () => {
-          document.body.classList.remove('loading-cms');
+          document.body.classList.remove('loading-cms', 'cms-ready');
           setStatus('内容编辑器加载失败，请检查网络后刷新重试。', true);
         });
         document.body.appendChild(script);
+      }
+
+      function relayStoredAuthMessage() {
+        let saved = null;
+        try {
+          saved = JSON.parse(localStorage.getItem(authBridgeKey) || 'null');
+        } catch (error) {
+          localStorage.removeItem(authBridgeKey);
+        }
+
+        if (!saved?.message || Date.now() - saved.createdAt > 10 * 60 * 1000) {
+          localStorage.removeItem(authBridgeKey);
+          return;
+        }
+
+        let attempts = 0;
+        const timer = window.setInterval(() => {
+          window.postMessage(saved.message, window.location.origin);
+          attempts += 1;
+          if (attempts >= 24) {
+            window.clearInterval(timer);
+            localStorage.removeItem(authBridgeKey);
+          }
+        }, 250);
       }
 
       function installCmsTheme() {

@@ -5,6 +5,7 @@ import { experiences } from '../data/experiences';
 import { about, profile } from '../data/profile';
 import { githubProfile, projects } from '../data/projects';
 import { sites } from '../data/sites';
+import { richText } from '../utils/richText';
 
 const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
 const posts = await Promise.all(
@@ -33,7 +34,7 @@ const { socials } = profile;
     <div>
       <h1 class="name" data-intro style="--i:0">{profile.name}</h1>
       <p class="title" data-intro style="--i:1">{profile.title}</p>
-      <p class="tagline" data-intro style="--i:2">{profile.tagline}</p>
+      <p class="tagline" data-intro style="--i:2" set:html={richText(profile.tagline)}></p>
 
       <nav id="nav">
         <a class="nav-link" href="#about" data-intro style="--i:3"><span class="nav-line"></span>关于</a>
@@ -62,8 +63,7 @@ const { socials } = profile;
           </a>
         )}
       </div>
-      <p class="foot" data-intro style="--i:9" set:html={profile.foot}></p>
-      <a class="admin-entry" href="/admin/" data-intro style="--i:10">内容管理</a>
+      <p class="foot" data-intro style="--i:9" set:html={richText(profile.foot)}></p>
     </div>
   </header>
 
@@ -74,7 +74,7 @@ const { socials } = profile;
     <section id="about">
       <div class="section-label">关于</div>
       <div class="prose" data-reveal>
-        {about.map((para) => <p set:html={para}></p>)}
+        {about.map((para) => <p set:html={richText(para)}></p>)}
       </div>
     </section>
 
@@ -87,7 +87,7 @@ const { socials } = profile;
             <div class="card-meta">{exp.meta}</div>
             <div>
               <div class="card-title">{exp.title} <span class="arrow">↗</span></div>
-              <div class="card-desc">{exp.desc}</div>
+              <div class="card-desc" set:html={richText(exp.desc)}></div>
               <div class="tags">{exp.tags.map((t) => <span class="tag">{t}</span>)}</div>
             </div>
           </a>
@@ -114,7 +114,7 @@ const { socials } = profile;
             </div>
             <div>
               <div class="card-title">{proj.name} <span class="arrow">↗</span></div>
-              <div class="card-desc">{proj.desc}</div>
+              <div class="card-desc" set:html={richText(proj.desc)}></div>
               <div class="tags">
                 {proj.repo && (
                   <span class="tag star" title="GitHub Stars">★ <span class="star-num">{proj.stars}</span></span>
@@ -141,7 +141,7 @@ const { socials } = profile;
             </div>
             <div>
               <div class="card-title">{site.name} <span class="arrow">↗</span></div>
-              <div class="card-desc">{site.desc}</div>
+              <div class="card-desc" set:html={richText(site.desc)}></div>
               <div class="tags">{site.tags.map((t) => <span class="tag">{t}</span>)}</div>
             </div>
           </a>
@@ -159,7 +159,7 @@ const { socials } = profile;
               <div class="post-main">
                 <div class="post-date">{fmtDate(post.data.date)}</div>
                 <h3 class="post-title">{post.data.title}</h3>
-                <p class="post-excerpt">{post.data.excerpt}</p>
+                <p class="post-excerpt" set:html={richText(post.data.excerpt)}></p>
                 <div class="post-tags">{post.data.tags.map((t) => <span class="tag">{t}</span>)}</div>
               </div>{/* post-date 放在 post-main 内,grid 两列布局不受影响 */}
               <span class="post-toggle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
@@ -167,7 +167,7 @@ const { socials } = profile;
             <div class="post-body">
               <div class="post-body-inner prose">
                 <Content />
-                {post.data.foot && <p class="post-foot">{post.data.foot}</p>}
+                {post.data.foot && <p class="post-foot" set:html={richText(post.data.foot)}></p>}
               </div>
             </div>
           </article>

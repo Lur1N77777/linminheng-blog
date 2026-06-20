@@ -114,6 +114,7 @@ function page({ scope }) {
       const loadingEl = document.querySelector('[data-loading]');
       const statusEl = document.querySelector('[data-status]');
       const copyButton = document.querySelector('[data-copy]');
+      const authBridgeKey = 'sveltia-cms-auth-message:' + provider;
       let message = null;
 
       function setStatus(text, error = false) {
@@ -122,8 +123,15 @@ function page({ scope }) {
       }
 
       function sendToCms() {
-        if (!message || !window.opener) return;
+        if (!message) return;
+
+        try {
+          localStorage.setItem(authBridgeKey, JSON.stringify({ message, createdAt: Date.now() }));
+        } catch (error) {}
+
+        if (!window.opener) return;
         window.opener.postMessage('authorizing:' + provider, window.location.origin);
+        window.opener.postMessage(message, window.location.origin);
       }
 
       window.addEventListener('message', (event) => {
@@ -137,7 +145,14 @@ function page({ scope }) {
         message = 'authorization:' + provider + ':success:' + payload;
         setStatus('授权成功，正在返回后台...');
         sendToCms();
-        setTimeout(() => window.close(), 1200);
+        setTimeout(() => {
+          if (window.opener) {
+            window.close();
+            return;
+          }
+
+          window.location.href = '/admin/?auth=github';
+        }, 1200);
       }
 
       function fail(error, code = 'TOKEN_REQUEST_FAILED') {

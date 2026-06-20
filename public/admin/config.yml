@@ -8,6 +8,9 @@ backend:
 media_folder: public/assets
 public_folder: /assets
 
+site_url: https://blog.loven7.com
+display_url: https://blog.loven7.com
+
 collections:
   - name: blog
     label: 博文
@@ -21,11 +24,11 @@ collections:
       - { label: 日期, name: date, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }
       - { label: 更新日期, name: updated, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD", required: false }
       - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
-      - { label: 摘要, name: excerpt, widget: text }
+      - { label: 摘要, name: excerpt, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
       - { label: 草稿, name: draft, widget: boolean, default: true }
       - { label: 封面图, name: cover, widget: image, required: false }
-      - { label: 结尾小字, name: foot, widget: string, required: false }
-      - { label: 正文, name: body, widget: markdown }
+      - { label: 结尾小字, name: foot, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true, required: false }
+      - { label: 正文, name: body, widget: markdown, buttons: [bold, italic, code, link, heading-one, heading-two, quote, bulleted-list, numbered-list], modes: [rich_text, raw] }
 
   - name: data
     label: 页面信息
@@ -41,8 +44,8 @@ collections:
             fields:
               - { label: 名字, name: name, widget: string }
               - { label: 副标题, name: title, widget: string }
-              - { label: 首页简介, name: tagline, widget: text }
-              - { label: 页脚小字, name: foot, widget: string }
+              - { label: 首页简介, name: tagline, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
+              - { label: 页脚小字, name: foot, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
               - { label: 默认配色, name: defaultPalette, widget: select, options: [amber, pine, terra, indigo, heather, ink, stone, olive, onyx, claude, openai] }
               - { label: 默认明暗, name: defaultTheme, widget: select, options: [dark, light] }
               - label: 社交链接
@@ -52,7 +55,7 @@ collections:
                   - { label: GitHub, name: github, widget: string, required: false }
                   - { label: Instagram, name: instagram, widget: string, required: false }
                   - { label: 邮箱, name: email, widget: string, required: false }
-          - { label: 自我介绍段落, name: about, widget: list, field: { label: 段落, name: paragraph, widget: text } }
+          - { label: 自我介绍段落, name: about, widget: list, field: { label: 段落, name: paragraph, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true } }
 
       - name: projects
         label: 项目
@@ -68,7 +71,7 @@ collections:
               - { label: 链接, name: href, widget: string }
               - { label: GitHub Repo, name: repo, widget: string, required: false }
               - { label: 兜底 Star 数, name: stars, widget: number, value_type: int, default: 0, required: false }
-              - { label: 简介, name: desc, widget: text }
+              - { label: 简介, name: desc, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
               - { label: Logo, name: logo, widget: image, required: false }
               - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
 
@@ -83,7 +86,7 @@ collections:
             fields:
               - { label: 名称, name: name, widget: string }
               - { label: 链接, name: href, widget: string }
-              - { label: 简介, name: desc, widget: text }
+              - { label: 简介, name: desc, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
               - { label: Logo, name: logo, widget: image, required: false }
               - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
 
@@ -98,6 +101,6 @@ collections:
             fields:
               - { label: 时间, name: meta, widget: string }
               - { label: 标题, name: title, widget: string }
-              - { label: 描述, name: desc, widget: text }
+              - { label: 描述, name: desc, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
               - { label: 链接, name: href, widget: string, required: false }
               - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
