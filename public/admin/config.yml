@@ -2,6 +2,8 @@ backend:
   name: github
   repo: Lur1N77777/linminheng-blog
   branch: main
+  base_url: https://blog.loven7.com
+  auth_endpoint: api/auth
 
 media_folder: public/assets
 public_folder: /assets
