@@ -1,7 +1,7 @@
 ---
 title: "CloudMail 做了几版之后"
 date: 2026-06-09
-tags: ["独立开发", "React Native", "Cloudflare"]
+tags: ["小工具", "React Native", "Cloudflare"]
 excerpt: "本来只是想做一个手机上能看的临时邮箱 App,结果中间改了好几次。"
 foot: ""
 ---
