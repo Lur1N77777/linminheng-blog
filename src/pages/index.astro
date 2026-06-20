@@ -83,14 +83,25 @@ const { socials } = profile;
       <div class="section-label">历程</div>
       <div class="cards">
         {experiences.map((exp) => (
-          <a class="card row" data-reveal href={exp.href ?? '#'}>
-            <div class="card-meta">{exp.meta}</div>
-            <div>
-              <div class="card-title">{exp.title} <span class="arrow">↗</span></div>
-              <div class="card-desc" set:html={richText(exp.desc)}></div>
-              <div class="tags">{exp.tags.map((t) => <span class="tag">{t}</span>)}</div>
+          exp.href ? (
+            <a class="card row" data-reveal href={exp.href} target="_blank" rel="noopener">
+              <div class="card-meta">{exp.meta}</div>
+              <div>
+                <div class="card-title">{exp.title} <span class="arrow">↗</span></div>
+                <div class="card-desc" set:html={richText(exp.desc)}></div>
+                <div class="tags">{exp.tags.map((t) => <span class="tag">{t}</span>)}</div>
+              </div>
+            </a>
+          ) : (
+            <div class="card row" data-reveal>
+              <div class="card-meta">{exp.meta}</div>
+              <div>
+                <div class="card-title">{exp.title}</div>
+                <div class="card-desc" set:html={richText(exp.desc)}></div>
+                <div class="tags">{exp.tags.map((t) => <span class="tag">{t}</span>)}</div>
+              </div>
             </div>
-          </a>
+          )
         ))}
       </div>
     </section>
