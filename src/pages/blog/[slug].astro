@@ -1,0 +1,86 @@
+---
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { profile } from '../../data/profile';
+import { richText } from '../../utils/richText';
+import {
+  formatPostDate,
+  getAdjacentPosts,
+  getPostUrl,
+  getPublishedPosts,
+  getReadingTime,
+  type BlogPost,
+} from '../../utils/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPublishedPosts();
+
+  return posts.map((post) => ({
+    params: { slug: post.data.slug },
+    props: { post, posts },
+  }));
+}
+
+const { post, posts } = Astro.props as { post: BlogPost; posts: BlogPost[] };
+const { Content } = await render(post);
+const nav = getAdjacentPosts(posts, post);
+const updated = post.data.updated ? formatPostDate(post.data.updated) : undefined;
+---
+
+<Base
+  profile={profile}
+  layout="single"
+  bodyClass="article-page"
+  title={`${post.data.title} — ${profile.name}`}
+  description={post.data.excerpt}
+  image={post.data.cover}
+  canonical={getPostUrl(post)}
+  ogType="article"
+  showReadingProgress
+>
+  <main class="single-page">
+    <article class="article-shell">
+      <header class="article-hero" data-intro style="--i:0">
+        <a class="back-link" href="/blog/">返回博文</a>
+        <div class="article-meta">
+          <span>{formatPostDate(post.data.date)}</span>
+          {updated && <span>更新于 {updated}</span>}
+          <span>{getReadingTime(post)}</span>
+        </div>
+        <h1 class="article-title">{post.data.title}</h1>
+        <p class="article-excerpt" set:html={richText(post.data.excerpt)}></p>
+        <div class="post-tags">{post.data.tags.map((tag) => <span class="tag">{tag}</span>)}</div>
+      </header>
+
+      {post.data.cover && (
+        <figure class="article-cover" data-reveal>
+          <img src={post.data.cover} alt="" loading="eager" />
+        </figure>
+      )}
+
+      <div class="article-content prose" data-reveal>
+        <Content />
+        {post.data.foot && <p class="post-foot" set:html={richText(post.data.foot)}></p>}
+      </div>
+    </article>
+
+    <nav class="article-nav" aria-label="文章导航" data-reveal>
+      {nav.previous ? (
+        <a href={getPostUrl(nav.previous)}>
+          <span>上一篇</span>
+          <strong>{nav.previous.data.title}</strong>
+        </a>
+      ) : (
+        <span></span>
+      )}
+      {nav.next ? (
+        <a href={getPostUrl(nav.next)}>
+          <span>下一篇</span>
+          <strong>{nav.next.data.title}</strong>
+        </a>
+      ) : (
+        <span></span>
+      )}
+    </nav>
+  </main>
+</Base>

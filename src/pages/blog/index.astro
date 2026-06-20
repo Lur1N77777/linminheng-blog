@@ -1,0 +1,44 @@
+---
+import Base from '../../layouts/Base.astro';
+import { profile } from '../../data/profile';
+import { richText } from '../../utils/richText';
+import { formatPostDate, getPostUrl, getPublishedPosts, getReadingTime } from '../../utils/posts';
+
+const posts = await getPublishedPosts();
+---
+
+<Base
+  profile={profile}
+  layout="single"
+  bodyClass="blog-index-page"
+  title={`博文 — ${profile.name}`}
+  description="LinMinheng 的全部博客文章。"
+  canonical="/blog/"
+>
+  <main class="single-page">
+    <header class="page-hero" data-intro style="--i:0">
+      <a class="back-link" href="/">返回首页</a>
+      <p class="page-kicker">Writing</p>
+      <h1 class="page-title">博文</h1>
+      <p class="page-desc">一些项目记录、日常想法和慢慢整理出来的文字。</p>
+    </header>
+
+    <section class="archive-list" aria-label="全部文章">
+      {posts.map((post, index) => (
+        <article class="archive-item" data-reveal style={`--i:${index}`}>
+          <a class="archive-link" href={getPostUrl(post)}>
+            <div class="archive-meta">
+              <span>{formatPostDate(post.data.date)}</span>
+              <span>{getReadingTime(post)}</span>
+            </div>
+            <div class="archive-main">
+              <h2>{post.data.title}</h2>
+              <p set:html={richText(post.data.excerpt)}></p>
+              <div class="post-tags">{post.data.tags.map((tag) => <span class="tag">{tag}</span>)}</div>
+            </div>
+          </a>
+        </article>
+      ))}
+    </section>
+  </main>
+</Base>

@@ -21,6 +21,7 @@ collections:
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - { label: 标题, name: title, widget: string }
+      - { label: 链接名, name: slug, widget: string, hint: "英文小写短链接,例如 cloudmail 或 personal-site" }
       - { label: 日期, name: date, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }
       - { label: 更新日期, name: updated, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD", required: false }
       - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }

@@ -1,5 +1,6 @@
 ---
 title: "一次没拍成的日落"
+slug: "golden-hour"
 date: 2026-05-21
 updated: ''
 tags:

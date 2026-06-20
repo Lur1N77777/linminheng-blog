@@ -1,30 +1,13 @@
 ---
-import { getCollection, render } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import { experiences } from '../data/experiences';
 import { about, profile } from '../data/profile';
 import { githubProfile, projects } from '../data/projects';
 import { sites } from '../data/sites';
 import { richText } from '../utils/richText';
+import { formatPostDate, getPostUrl, getPublishedPosts, getReadingTime } from '../utils/posts';
 
-const blogEntries = await getCollection('blog', ({ data }) => !data.draft);
-const posts = await Promise.all(
-  blogEntries
-    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
-    .map(async (entry) => {
-      const { Content } = await render(entry);
-      return { entry, Content };
-    })
-);
-
-function fmtDate(value: Date): string {
-  const d = new Date(value);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y} · ${m} · ${day}`;
-}
-
+const posts = (await getPublishedPosts()).slice(0, 3);
 const { socials } = profile;
 ---
 
@@ -162,25 +145,22 @@ const { socials } = profile;
 
     <!-- 博文 -->
     <section id="writing">
-      <div class="section-label">博文</div>
+      <div class="section-head" data-reveal>
+        <div class="section-label">博文</div>
+        <a class="section-action" href="/blog/">全部文章</a>
+      </div>
       <div class="posts">
-        {posts.map(({ entry: post, Content }) => (
+        {posts.map((post) => (
           <article class="post" data-reveal>
-            <button class="post-head" type="button" aria-expanded="false">
+            <a class="post-head post-link" href={getPostUrl(post)}>
               <div class="post-main">
-                <div class="post-date">{fmtDate(post.data.date)}</div>
+                <div class="post-date">{formatPostDate(post.data.date)} · {getReadingTime(post)}</div>
                 <h3 class="post-title">{post.data.title}</h3>
                 <p class="post-excerpt" set:html={richText(post.data.excerpt)}></p>
                 <div class="post-tags">{post.data.tags.map((t) => <span class="tag">{t}</span>)}</div>
-              </div>{/* post-date 放在 post-main 内,grid 两列布局不受影响 */}
-              <span class="post-toggle" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
-            </button>
-            <div class="post-body">
-              <div class="post-body-inner prose">
-                <Content />
-                {post.data.foot && <p class="post-foot" set:html={richText(post.data.foot)}></p>}
               </div>
-            </div>
+              <span class="read-more" aria-hidden="true">阅读全文</span>
+            </a>
           </article>
         ))}
       </div>

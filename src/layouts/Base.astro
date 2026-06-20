@@ -5,6 +5,12 @@ import { profile as fallbackProfile, type Profile } from '../data/profile';
 interface Props {
   title?: string;
   description?: string;
+  image?: string;
+  canonical?: string;
+  bodyClass?: string;
+  layout?: 'split' | 'single';
+  showReadingProgress?: boolean;
+  ogType?: 'website' | 'article';
   profile?: Profile;
 }
 
@@ -15,7 +21,17 @@ const {
 const {
   title = `${profile.name} — 一方天地`,
   description = `${profile.name} 的个人空间 · 黄昏书房`,
+  image,
+  canonical,
+  bodyClass = '',
+  layout = 'split',
+  showReadingProgress = false,
+  ogType = 'website',
 } = Astro.props;
+
+const siteUrl = Astro.site ?? new URL(Astro.url.origin);
+const canonicalUrl = canonical ? new URL(canonical, siteUrl).toString() : new URL(Astro.url.pathname, siteUrl).toString();
+const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
 ---
 
 <!DOCTYPE html>
@@ -25,6 +41,13 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
     <link rel="icon" href="/assets/loven7-logo.svg" type="image/svg+xml" />
 
     <!-- 字体:Fraunces 做标题,Inter 做正文,加载失败优雅回退到系统字体 -->
@@ -48,7 +71,8 @@ const {
     </script>
   </head>
 
-  <body>
+  <body class={bodyClass || undefined}>
+    {showReadingProgress && <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>}
     <div class="spotlight" aria-hidden="true"></div>
 
     <!-- 配色切换器:平时收起为一个调色盘图标,点击才优雅展开 -->
@@ -86,7 +110,7 @@ const {
     </div>
 
     <div class="wrap">
-      <div class="layout">
+      <div class={`layout layout-${layout}`}>
         <slot />
       </div>
     </div>
@@ -209,7 +233,7 @@ const {
         document.querySelectorAll('[data-reveal]').forEach((el) => el.classList.add('in'));
       }
 
-      document.querySelectorAll('.post-head').forEach((head) => {
+      document.querySelectorAll('.post-head[aria-expanded]').forEach((head) => {
         head.addEventListener('click', () => {
           const article = head.closest('.post');
           if (!article) return;
@@ -262,6 +286,19 @@ const {
           }
         });
       })();
+
+      const readingProgress = document.getElementById('readingProgress');
+      if (readingProgress) {
+        const updateReadingProgress = () => {
+          const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+          const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
+          readingProgress.style.transform = 'scaleX(' + Math.min(1, Math.max(0, progress)) + ')';
+        };
+
+        updateReadingProgress();
+        window.addEventListener('scroll', updateReadingProgress, { passive: true });
+        window.addEventListener('resize', updateReadingProgress);
+      }
     </script>
   </body>
 </html>

@@ -1,5 +1,6 @@
 ---
 title: "关掉通知试了一周"
+slug: "notifications-off"
 date: 2026-03-18
 tags: ["生活", "随笔"]
 excerpt: "把大部分推送关掉之后,手机确实安静了不少。"

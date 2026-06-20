@@ -1,5 +1,6 @@
 ---
 title: "又自己写了一个小工具"
+slug: "reinvent-the-wheel"
 date: 2026-04-30
 tags: ["小工具", "思考"]
 excerpt: "有时候不是因为现成工具不能用,只是想自己弄明白。"
