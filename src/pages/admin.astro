@@ -7,7 +7,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>{title}</title>
     <style>
       :root {
@@ -46,6 +46,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       body {
         display: grid;
         place-items: center;
+        min-height: 100dvh;
         overflow-x: hidden;
         background: var(--bg);
         color: var(--text);
@@ -53,6 +54,8 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
 
       body.unlocked {
         display: block;
+        min-width: 0;
+        min-height: 100dvh;
         background: #0f0f0f;
       }
 
@@ -101,25 +104,27 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
         padding: 1.1rem 1.35rem 1.35rem;
       }
 
-      label {
+      .gate label {
         display: grid;
         gap: 0.45rem;
         color: var(--faint);
         font-size: 0.78rem;
       }
 
-      input,
-      button {
+      .gate input,
+      .gate button {
         width: 100%;
         min-height: 46px;
         border-radius: var(--radius);
         font: inherit;
       }
 
-      input {
+      .gate input {
         border: 1px solid rgba(247, 241, 230, 0.18);
         background: #11100e;
         color: var(--text);
+        font-size: 16px !important;
+        line-height: 1.2;
         outline: none;
         padding: 0 0.85rem;
         transition:
@@ -127,16 +132,17 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           background 180ms ease;
       }
 
-      input:focus {
+      .gate input:focus {
         border-color: rgba(240, 199, 131, 0.72);
         background: #14120f;
       }
 
-      button {
+      .gate button {
         border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--line));
         background: var(--accent);
         color: #17100a;
         cursor: pointer;
+        font-size: 0.95rem;
         font-weight: 650;
         transition:
           transform 180ms ease,
@@ -144,13 +150,13 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           background 180ms ease;
       }
 
-      button:hover {
+      .gate button:hover {
         background: color-mix(in srgb, var(--accent) 88%, #11100e);
         border-color: var(--accent);
         transform: translateY(-1px);
       }
 
-      button:disabled {
+      .gate button:disabled {
         cursor: wait;
         opacity: 0.6;
         transform: none;
@@ -227,29 +233,10 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       .cms-loading {
         display: none;
         min-height: 100vh;
+        min-height: 100dvh;
         place-items: center;
         color: var(--muted);
         font-size: 0.92rem;
-      }
-
-      .sync-note {
-        position: fixed;
-        left: 1rem;
-        bottom: calc(1rem + env(safe-area-inset-bottom));
-        z-index: 2147483000;
-        display: none;
-        max-width: min(28rem, calc(100vw - 2rem));
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: #181612;
-        color: var(--muted);
-        padding: 0.72rem 0.85rem;
-        font-size: 0.78rem;
-        line-height: 1.55;
-      }
-
-      body.cms-ready .sync-note {
-        display: block;
       }
 
       body.loading-cms .gate {
@@ -265,15 +252,46 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       }
 
       @media (max-width: 520px) {
+        body {
+          align-items: start;
+          padding-top: max(1rem, env(safe-area-inset-top));
+          padding-bottom: max(1rem, env(safe-area-inset-bottom));
+        }
+
+        body.unlocked,
+        body.loading-cms,
+        body.cms-ready {
+          padding: 0;
+        }
+
         .gate {
           width: 100%;
-          padding: 1rem;
+          padding: 0.85rem;
+        }
+
+        .gate-card {
+          margin: 0 auto;
+          max-width: 28rem;
         }
 
         .gate-head,
         .gate-form {
-          padding-left: 1rem;
-          padding-right: 1rem;
+          padding-left: 0.95rem;
+          padding-right: 0.95rem;
+        }
+
+        .gate-head {
+          padding-top: 1.1rem;
+        }
+
+        .gate-form {
+          gap: 0.75rem;
+          padding-bottom: 1.05rem;
+        }
+
+        .desc {
+          font-size: 0.88rem;
+          line-height: 1.68;
         }
       }
     </style>
@@ -299,7 +317,6 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
     </main>
 
     <div class="cms-loading" data-loading>正在进入内容管理...</div>
-    <div class="sync-note" data-sync-note>保存后需要等待线上部署完成，通常 30-90 秒。主页已关闭缓存，部署完成后刷新即可看到新内容。</div>
 
     <script define:vars={{ passwordHash }} is:inline>
       const sessionKey = 'yftd-admin-unlocked';
@@ -391,6 +408,18 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
             filter: none !important;
           }
 
+          body.unlocked input,
+          body.unlocked textarea,
+          body.unlocked select {
+            max-width: 100% !important;
+            font-size: 16px !important;
+          }
+
+          body.unlocked [role="dialog"],
+          body.unlocked dialog {
+            max-width: calc(100vw - 1rem) !important;
+          }
+
           body.unlocked button.sui.button.primary,
           body.unlocked .sui.button.primary {
             border-color: rgba(217, 168, 96, 0.72) !important;
@@ -417,6 +446,17 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
 
           body.unlocked img.logo[src^="data:image/svg+xml"] {
             display: none !important;
+          }
+
+          @media (max-width: 640px) {
+            body.unlocked {
+              overflow-x: hidden !important;
+            }
+
+            body.unlocked .sui.button,
+            body.unlocked button {
+              min-height: 42px !important;
+            }
           }
         `;
       }
