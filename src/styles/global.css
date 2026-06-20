@@ -206,6 +206,11 @@ html[data-palette="openai"][data-theme="light"] {
   --shadow:0 18px 50px -24px rgba(20,90,70,0.20); --spotlight:rgba(14,140,109,0.08);
 }
 
+html[data-palette][data-theme] {
+  --shadow: none;
+  --spotlight: transparent;
+}
+
 /* ============================================================
    基础重置
    ============================================================ */
@@ -248,22 +253,15 @@ button { font: inherit; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ============================================================
-   鼠标暖光晕 —— 黄金时刻那束光
+   静默背景层 —— 保留节点,不再制造光晕或反光
    ============================================================ */
 .spotlight {
   pointer-events: none;
   position: fixed;
   inset: 0;
   z-index: 0;
-  transition: background 0.18s var(--ease);
-  background: radial-gradient(
-    600px circle at var(--mx, 50%) var(--my, 50%),
-    var(--spotlight),
-    transparent 60%
-  );
-}
-@media (max-width: 900px), (hover: none) {
-  .spotlight { display: none; }
+  display: none;
+  background: none;
 }
 
 /* ============================================================
@@ -651,17 +649,15 @@ section { margin-bottom: 6rem; scroll-margin-top: 6rem; }
   color: var(--text-muted);
   font: inherit;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, white 5%, transparent);
+  box-shadow: none;
   transition: color var(--speed) var(--ease), border-color var(--speed) var(--ease),
-              background var(--speed) var(--ease), transform var(--speed) var(--ease-out),
-              box-shadow var(--speed) var(--ease);
+              background var(--speed) var(--ease), transform var(--speed) var(--ease-out);
 }
 .theme-toggle:hover {
   color: var(--accent);
   border-color: var(--accent);
   background: var(--accent-soft);
-  transform: translateY(-1px) rotate(12deg);
-  box-shadow: 0 10px 22px -16px var(--accent);
+  transform: translateY(-1px);
 }
 .theme-toggle svg { width: 16px; height: 16px; }
 .theme-toggle .moon { display: none; }
@@ -691,22 +687,19 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   place-items: center;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 76%, transparent);
-  backdrop-filter: blur(14px) saturate(1.05);
+  background: color-mix(in srgb, var(--bg-tint) 92%, var(--bg));
   color: var(--text-muted);
   font: inherit;
   cursor: pointer;
-  box-shadow: 0 18px 42px -28px rgba(0,0,0,0.65);
+  box-shadow: none;
   transition: color var(--speed) var(--ease), border-color var(--speed) var(--ease),
-              transform var(--speed) var(--ease-out), background var(--speed) var(--ease),
-              box-shadow var(--speed) var(--ease);
+              transform var(--speed) var(--ease-out), background var(--speed) var(--ease);
 }
 .palette-trigger:hover,
 .palette.open .palette-trigger {
   color: var(--accent);
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--bg-tint) 82%, transparent);
-  box-shadow: 0 18px 45px -25px color-mix(in srgb, var(--accent) 46%, black);
+  background: color-mix(in srgb, var(--accent-soft) 52%, var(--bg-tint));
 }
 .palette.open .palette-trigger { transform: rotate(90deg) scale(0.98); }
 .palette-trigger svg { width: 19px; height: 19px; }
@@ -724,10 +717,8 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   pointer-events: none;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--bg-tint) 84%, transparent), color-mix(in srgb, var(--bg) 72%, transparent));
-  backdrop-filter: blur(16px) saturate(1.08);
-  box-shadow: 0 20px 58px -30px rgba(0,0,0,0.72);
+  background: color-mix(in srgb, var(--bg-tint) 94%, var(--bg));
+  box-shadow: none;
   transform: translate3d(10px, -50%, 0) scale(0.96);
   transform-origin: right center;
   transition: opacity 0.24s var(--ease),
@@ -747,7 +738,7 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   height: 26px;
   flex-shrink: 0;
   border-radius: var(--radius-md);
-  border: 1px solid color-mix(in srgb, var(--swatch) 34%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--swatch) 42%, var(--border));
   padding: 0;
   cursor: pointer;
   position: relative;
@@ -760,24 +751,26 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
               opacity var(--speed) var(--ease);
 }
 .swatch:hover {
-  transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--swatch) 78%, var(--text));
-  background: color-mix(in srgb, var(--swatch) 88%, var(--text));
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--swatch) 76%, var(--border));
+  background: var(--swatch);
+  opacity: 0.88;
 }
 .swatch.active {
-  transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--swatch) 58%, var(--border));
-  background: color-mix(in srgb, var(--swatch) 92%, var(--text));
+  transform: translateY(-1px) scale(0.92);
+  border-color: color-mix(in srgb, var(--swatch) 72%, var(--text-muted));
+  background: var(--swatch);
 }
 .swatch.active::before {
   content: "";
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: -7px;
-  height: 2px;
-  border-radius: var(--radius-pill);
-  background: var(--accent);
+  left: 50%;
+  bottom: -8px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--swatch) 72%, var(--text));
+  transform: translateX(-50%);
   pointer-events: none;
 }
 .swatch[data-p="amber"]   { --swatch: #D59A4A; }
@@ -803,7 +796,7 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   font-size: 0.66rem;
   letter-spacing: 0;
   color: var(--text-muted);
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-tint) 94%, var(--bg));
   padding: 0.2rem 0.5rem;
   border-radius: var(--radius-sm);
   opacity: 0;
@@ -874,20 +867,20 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
    由上而下错落淡入上浮,每个元素按 --i 递增延迟
    ============================================================ */
 @keyframes intro-rise {
-  from { opacity: 0; transform: translateY(18px); filter: blur(4px); }
-  to   { opacity: 1; transform: none;            filter: blur(0); }
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: none; }
 }
 [data-intro] {
   opacity: 0;
   animation: intro-rise 0.9s var(--ease-out) forwards;
   animation-delay: calc(var(--i, 0) * 0.09s + 0.15s);
-  will-change: opacity, transform, filter;
+  will-change: opacity, transform;
 }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
   [data-reveal] { opacity: 1; transform: none; }
-  [data-intro]  { opacity: 1; transform: none; filter: none; }
+  [data-intro]  { opacity: 1; transform: none; }
   html { scroll-behavior: auto; }
 }
 

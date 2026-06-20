@@ -13,14 +13,14 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
       :root {
         color-scheme: dark;
         --bg: #11100e;
-        --panel: rgba(247, 241, 230, 0.075);
-        --panel-strong: rgba(247, 241, 230, 0.12);
-        --line: rgba(247, 241, 230, 0.18);
+        --panel: #181612;
+        --panel-strong: #201d18;
+        --line: rgba(244, 234, 220, 0.14);
         --text: #f4eadc;
         --muted: rgba(244, 234, 220, 0.64);
         --faint: rgba(244, 234, 220, 0.42);
         --accent: #d9a860;
-        --accent-strong: #f0c783;
+        --accent-strong: #d9a860;
         --danger: #ffb0a6;
         --radius: 8px;
         font-family:
@@ -47,9 +47,7 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
         display: grid;
         place-items: center;
         overflow-x: hidden;
-        background:
-          radial-gradient(circle at 18% 12%, rgba(217, 168, 96, 0.18), transparent 34rem),
-          linear-gradient(135deg, #11100e 0%, #171512 46%, #0f1412 100%);
+        background: var(--bg);
         color: var(--text);
       }
 
@@ -66,9 +64,8 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
       .gate-card {
         border: 1px solid var(--line);
         border-radius: var(--radius);
-        background: color-mix(in srgb, var(--panel) 72%, transparent);
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
-        backdrop-filter: blur(22px);
+        background: var(--panel);
+        box-shadow: none;
       }
 
       .gate-head {
@@ -121,44 +118,98 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
 
       input {
         border: 1px solid rgba(247, 241, 230, 0.18);
-        background: rgba(0, 0, 0, 0.22);
+        background: #11100e;
         color: var(--text);
         outline: none;
         padding: 0 0.85rem;
         transition:
           border-color 180ms ease,
-          background 180ms ease,
-          box-shadow 180ms ease;
+          background 180ms ease;
       }
 
       input:focus {
         border-color: rgba(240, 199, 131, 0.72);
-        background: rgba(0, 0, 0, 0.28);
-        box-shadow: 0 0 0 3px rgba(240, 199, 131, 0.14);
+        background: #14120f;
       }
 
       button {
-        border: 1px solid rgba(240, 199, 131, 0.45);
-        background: linear-gradient(180deg, #e8bb74, #c98f45);
+        border: 1px solid color-mix(in srgb, var(--accent) 72%, var(--line));
+        background: var(--accent);
         color: #17100a;
         cursor: pointer;
         font-weight: 650;
         transition:
           transform 180ms ease,
-          filter 180ms ease,
-          box-shadow 180ms ease;
+          border-color 180ms ease,
+          background 180ms ease;
       }
 
       button:hover {
-        filter: brightness(1.04);
-        box-shadow: 0 12px 28px rgba(217, 168, 96, 0.2);
+        background: color-mix(in srgb, var(--accent) 88%, #11100e);
+        border-color: var(--accent);
         transform: translateY(-1px);
       }
 
       button:disabled {
         cursor: wait;
-        filter: grayscale(0.25);
+        opacity: 0.6;
         transform: none;
+      }
+
+      body.unlocked {
+        --sui-primary-accent-color: #d9a860 !important;
+        --sui-primary-accent-hover-color: #c79652 !important;
+        --sui-primary-background-color: #11100e !important;
+        --sui-secondary-background-color: #181612 !important;
+        --sui-tertiary-background-color: #201d18 !important;
+        --sui-primary-foreground-color: #f4eadc !important;
+        --sui-secondary-foreground-color: rgba(244, 234, 220, 0.68) !important;
+        --sui-primary-border-color: rgba(244, 234, 220, 0.14) !important;
+        --sui-control-medium-border-radius: 8px !important;
+        --sui-button-medium-border-radius: 8px !important;
+      }
+
+      body.unlocked *,
+      body.unlocked *::before,
+      body.unlocked *::after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+
+      body.unlocked button,
+      body.unlocked .sui.button,
+      body.unlocked [role="button"] {
+        background-image: none !important;
+        filter: none !important;
+      }
+
+      body.unlocked .sui.button.primary,
+      body.unlocked button.primary,
+      body.unlocked button[data-variant="primary"] {
+        border-color: color-mix(in srgb, #d9a860 72%, rgba(244, 234, 220, 0.14)) !important;
+        background-color: #d9a860 !important;
+        color: #17100a !important;
+      }
+
+      body.unlocked button.sui.button.secondary,
+      body.unlocked .sui.button.secondary {
+        border-color: rgba(244, 234, 220, 0.18) !important;
+        background-color: #181612 !important;
+        color: rgba(244, 234, 220, 0.82) !important;
+      }
+
+      body.unlocked button.sui.button.primary *,
+      body.unlocked .sui.button.primary * {
+        color: #17100a !important;
+      }
+
+      body.unlocked button.sui.button.secondary *,
+      body.unlocked .sui.button.secondary * {
+        color: rgba(244, 234, 220, 0.82) !important;
+      }
+
+      body.unlocked img.logo[src^="data:image/svg+xml"] {
+        display: none !important;
       }
 
       .status {
@@ -248,14 +299,72 @@ const passwordHash = '9d15a0444e927706067bd8d13a86af0411293936746e1e1fab8ca17627
 
       function loadCms() {
         document.body.classList.add('loading-cms', 'unlocked');
+        installCmsTheme();
         const script = document.createElement('script');
         script.src = 'https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js';
         script.async = true;
+        script.addEventListener('load', () => {
+          setTimeout(installCmsTheme, 0);
+          setTimeout(installCmsTheme, 800);
+        });
         script.addEventListener('error', () => {
           document.body.classList.remove('loading-cms');
           setStatus('内容编辑器加载失败，请检查网络后刷新重试。', true);
         });
         document.body.appendChild(script);
+      }
+
+      function installCmsTheme() {
+        let style = document.querySelector('style[data-cms-matte-theme]');
+        if (!style) {
+          style = document.createElement('style');
+          style.setAttribute('data-cms-matte-theme', '');
+          document.head.appendChild(style);
+        }
+
+        style.textContent = `
+          body.unlocked *,
+          body.unlocked *::before,
+          body.unlocked *::after {
+            box-shadow: none !important;
+            text-shadow: none !important;
+          }
+
+          body.unlocked button,
+          body.unlocked .sui.button,
+          body.unlocked [role="button"] {
+            background-image: none !important;
+            filter: none !important;
+          }
+
+          body.unlocked button.sui.button.primary,
+          body.unlocked .sui.button.primary {
+            border-color: rgba(217, 168, 96, 0.72) !important;
+            background-color: #d9a860 !important;
+            color: #17100a !important;
+          }
+
+          body.unlocked button.sui.button.secondary,
+          body.unlocked .sui.button.secondary {
+            border-color: rgba(244, 234, 220, 0.18) !important;
+            background-color: #181612 !important;
+            color: rgba(244, 234, 220, 0.82) !important;
+          }
+
+          body.unlocked button.sui.button.primary *,
+          body.unlocked .sui.button.primary * {
+            color: #17100a !important;
+          }
+
+          body.unlocked button.sui.button.secondary *,
+          body.unlocked .sui.button.secondary * {
+            color: rgba(244, 234, 220, 0.82) !important;
+          }
+
+          body.unlocked img.logo[src^="data:image/svg+xml"] {
+            display: none !important;
+          }
+        `;
       }
 
       if (sessionStorage.getItem(sessionKey) === '1') {

@@ -11,8 +11,8 @@ function page({ scope }) {
       :root {
         color-scheme: dark;
         --bg: #11100f;
-        --panel: #1d1d1b;
-        --line: rgba(255, 255, 255, 0.12);
+        --panel: #181612;
+        --line: rgba(244, 234, 220, 0.14);
         --text: #f4eadc;
         --muted: rgba(244, 234, 220, 0.68);
         --accent: #d9a860;
@@ -27,9 +27,7 @@ function page({ scope }) {
         display: grid;
         place-items: center;
         padding: 24px;
-        background:
-          radial-gradient(circle at 20% 10%, rgba(217, 168, 96, 0.16), transparent 30rem),
-          var(--bg);
+        background: var(--bg);
         color: var(--text);
       }
 
@@ -37,8 +35,8 @@ function page({ scope }) {
         width: min(100%, 480px);
         border: 1px solid var(--line);
         border-radius: 8px;
-        background: color-mix(in srgb, var(--panel) 86%, transparent);
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+        background: var(--panel);
+        box-shadow: none;
       }
 
       .head, .body { padding: 22px; }
@@ -72,6 +70,12 @@ function page({ scope }) {
         font-weight: 700;
         text-decoration: none;
         cursor: pointer;
+        transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+      }
+      a:hover, button:hover {
+        background: color-mix(in srgb, var(--accent) 88%, #11100f);
+        border-color: var(--accent);
+        transform: translateY(-1px);
       }
       .secondary {
         margin-left: 8px;
