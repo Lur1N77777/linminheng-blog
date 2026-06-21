@@ -343,6 +343,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       function loadCms() {
         document.body.classList.add('loading-cms', 'unlocked');
         installCmsTheme();
+        installCmsScrollSmoother();
         installImagePasteEnhancer();
         relayStoredAuthMessage();
         const script = document.createElement('script');
@@ -353,6 +354,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           document.body.classList.add('cms-ready');
           setTimeout(installCmsTheme, 0);
           setTimeout(installCmsTheme, 800);
+          installCmsScrollSmoother();
           installImagePasteEnhancer();
           relayStoredAuthMessage();
         });
@@ -361,6 +363,59 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           setStatus('内容编辑器加载失败，请检查网络后刷新重试。', true);
         });
         document.body.appendChild(script);
+      }
+
+      function normalizeScrollArg(arg) {
+        if (!arg || typeof arg !== 'object' || !('behavior' in arg)) return arg;
+
+        return { ...arg, behavior: 'auto' };
+      }
+
+      function installCmsScrollSmoother() {
+        if (window.__blogCmsScrollSmootherInstalled) return;
+        window.__blogCmsScrollSmootherInstalled = true;
+
+        const originalElementScrollTo = Element.prototype.scrollTo;
+        const originalElementScrollBy = Element.prototype.scrollBy;
+        const originalWindowScrollTo = window.scrollTo.bind(window);
+        const originalWindowScrollBy = window.scrollBy.bind(window);
+        const pendingScrolls = new WeakMap();
+
+        function isCmsActive() {
+          return document.body.classList.contains('unlocked');
+        }
+
+        function scheduleElementScroll(element, method, args) {
+          if (!isCmsActive()) {
+            return method.apply(element, args);
+          }
+
+          const normalizedArgs = args.map(normalizeScrollArg);
+          const pending = pendingScrolls.get(element);
+          if (pending) {
+            pending.args = normalizedArgs;
+            pending.method = method;
+            return;
+          }
+
+          const next = { method, args: normalizedArgs };
+          pendingScrolls.set(element, next);
+          requestAnimationFrame(() => {
+            pendingScrolls.delete(element);
+            next.method.apply(element, next.args);
+          });
+        }
+
+        Element.prototype.scrollTo = function (...args) {
+          return scheduleElementScroll(this, originalElementScrollTo, args);
+        };
+
+        Element.prototype.scrollBy = function (...args) {
+          return scheduleElementScroll(this, originalElementScrollBy, args);
+        };
+
+        window.scrollTo = (...args) => originalWindowScrollTo(...args.map(normalizeScrollArg));
+        window.scrollBy = (...args) => originalWindowScrollBy(...args.map(normalizeScrollArg));
       }
 
       function extractImageUrl(value) {
@@ -569,6 +624,33 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           body.unlocked select {
             max-width: 100% !important;
             font-size: 16px !important;
+          }
+
+          body.unlocked,
+          body.unlocked * {
+            scroll-behavior: auto !important;
+          }
+
+          body.unlocked [data-slate-editor],
+          body.unlocked [contenteditable="true"],
+          body.unlocked [role="textbox"],
+          body.unlocked [class*="preview" i] {
+            overflow-anchor: none !important;
+            overscroll-behavior: contain !important;
+          }
+
+          body.unlocked [data-slate-editor] img,
+          body.unlocked [contenteditable="true"] img,
+          body.unlocked [role="textbox"] img,
+          body.unlocked [class*="preview" i] img {
+            display: block !important;
+            width: auto !important;
+            max-width: min(100%, 36rem) !important;
+            max-height: min(68vh, 640px) !important;
+            height: auto !important;
+            object-fit: contain !important;
+            margin: 0.8rem auto !important;
+            border-radius: 8px !important;
           }
 
           body.unlocked [role="dialog"],
