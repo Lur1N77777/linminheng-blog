@@ -409,17 +409,27 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
         return target.closest('[contenteditable="true"]');
       }
 
+      function dispatchEditorInput(target) {
+        const event = new InputEvent('input', {
+          bubbles: true,
+          composed: true,
+          inputType: 'insertFromPaste',
+        });
+        target.dispatchEvent(event);
+      }
+
       function insertText(target, text) {
         if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
           const start = target.selectionStart ?? target.value.length;
           const end = target.selectionEnd ?? target.value.length;
           target.setRangeText(text, start, end, 'end');
-          target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+          dispatchEditorInput(target);
           return;
         }
 
         target.focus();
         document.execCommand('insertText', false, text);
+        dispatchEditorInput(target);
       }
 
       function escapeAttribute(value) {
@@ -442,13 +452,55 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           false,
           `<p><img src="${escapeAttribute(imageUrl)}" alt="图片" /></p>`,
         );
+        dispatchEditorInput(target);
+      }
+
+      function dispatchImagePaste(target, imageUrl) {
+        if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+          insertImage(target, imageUrl);
+          return true;
+        }
+
+        if (typeof DataTransfer !== 'function' || typeof ClipboardEvent !== 'function') {
+          insertImage(target, imageUrl);
+          return true;
+        }
+
+        const html = `<p><img src="${escapeAttribute(imageUrl)}" alt="图片" /></p>`;
+        const markdown = `![图片](${imageUrl})`;
+        const data = new DataTransfer();
+        data.setData('text/html', html);
+        data.setData('text/plain', markdown);
+
+        window.__blogForwardingImagePaste = true;
+        const forwarded = target.dispatchEvent(new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          clipboardData: data,
+        }));
+        window.__blogForwardingImagePaste = false;
+
+        window.setTimeout(() => {
+          const hasImage = Array.from(target.querySelectorAll?.('img') || [])
+            .some((image) => image.getAttribute('src') === imageUrl);
+          if (!hasImage) {
+            insertImage(target, imageUrl);
+          } else {
+            dispatchEditorInput(target);
+          }
+        }, 0);
+
+        return forwarded;
       }
 
       function installImagePasteEnhancer() {
         if (window.__blogImagePasteEnhancerInstalled) return;
         window.__blogImagePasteEnhancerInstalled = true;
 
-        document.addEventListener('paste', (event) => {
+        const handlePaste = (event) => {
+          if (window.__blogForwardingImagePaste) return;
+
           const text = event.clipboardData?.getData('text/plain')?.trim() || '';
           const imageUrl = extractImageUrl(text);
           if (!imageUrl) return;
@@ -457,8 +509,12 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           if (!target) return;
 
           event.preventDefault();
-          insertImage(target, imageUrl);
-        }, true);
+          event.stopImmediatePropagation();
+          dispatchImagePaste(target, imageUrl);
+        };
+
+        window.addEventListener('paste', handlePaste, true);
+        document.addEventListener('paste', handlePaste, true);
       }
 
       function relayStoredAuthMessage() {
