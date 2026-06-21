@@ -364,6 +364,22 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       }
 
       function extractImageUrl(value) {
+        const imageExtensions = [
+          'avif',
+          'bmp',
+          'gif',
+          'heic',
+          'heif',
+          'ico',
+          'jfif',
+          'jpg',
+          'jpeg',
+          'png',
+          'svg',
+          'tif',
+          'tiff',
+          'webp',
+        ];
         const trimmed = value.trim();
         const markdownImage = trimmed.match(/^!\[[^\]]*]\(([^)]+)\)$/);
         const candidate = markdownImage ? markdownImage[1].trim() : trimmed;
@@ -371,7 +387,8 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
         try {
           const url = new URL(candidate);
           const pathname = url.pathname.toLowerCase();
-          const hasImageExtension = /\.(?:png|jpe?g|gif|webp|avif)$/i.test(pathname);
+          const extension = pathname.split('.').pop();
+          const hasImageExtension = imageExtensions.includes(extension || '');
           const isLoven7Image = url.hostname === 'img.loven7.com' && pathname.startsWith('/file/');
 
           return /^https?:$/.test(url.protocol) && (hasImageExtension || isLoven7Image)

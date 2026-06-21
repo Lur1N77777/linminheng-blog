@@ -1,6 +1,23 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
+const imageExtensions = [
+  'avif',
+  'bmp',
+  'gif',
+  'heic',
+  'heif',
+  'ico',
+  'jfif',
+  'jpg',
+  'jpeg',
+  'png',
+  'svg',
+  'tif',
+  'tiff',
+  'webp',
+];
+
 function extractImageUrl(value) {
   const trimmed = value.trim();
   const markdownImage = trimmed.match(/^!\[[^\]]*]\(([^)]+)\)$/);
@@ -9,7 +26,8 @@ function extractImageUrl(value) {
   try {
     const url = new URL(candidate);
     const pathname = url.pathname.toLowerCase();
-    const hasImageExtension = /\.(?:png|jpe?g|gif|webp|avif)$/i.test(pathname);
+    const extension = pathname.split('.').pop();
+    const hasImageExtension = imageExtensions.includes(extension || '');
     const isLoven7Image = url.hostname === 'img.loven7.com' && pathname.startsWith('/file/');
 
     return /^https?:$/.test(url.protocol) && (hasImageExtension || isLoven7Image)
