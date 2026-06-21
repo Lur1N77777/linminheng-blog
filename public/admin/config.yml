@@ -29,7 +29,7 @@ collections:
       - { label: 草稿, name: draft, widget: boolean, default: true }
       - { label: 封面图, name: cover, widget: image, required: false }
       - { label: 结尾小字, name: foot, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true, required: false }
-      - { label: 正文, name: body, widget: markdown, buttons: [bold, italic, code, link, image, heading-one, heading-two, quote, bulleted-list, numbered-list], modes: [rich_text, raw] }
+      - { label: 正文, name: body, widget: markdown, hint: "图床图片直接把图片链接粘贴到正文里即可,不要点图片按钮。", buttons: [bold, italic, code, link, heading-one, heading-two, quote, bulleted-list, numbered-list], modes: [rich_text, raw] }
 
   - name: data
     label: 页面信息

@@ -1,7 +1,24 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-const imageUrlPattern = /^https?:\/\/\S+\.(?:png|jpe?g|gif|webp|avif)(?:[?#]\S*)?$/i;
+function extractImageUrl(value) {
+  const trimmed = value.trim();
+  const markdownImage = trimmed.match(/^!\[[^\]]*]\(([^)]+)\)$/);
+  const candidate = markdownImage ? markdownImage[1].trim() : trimmed;
+
+  try {
+    const url = new URL(candidate);
+    const pathname = url.pathname.toLowerCase();
+    const hasImageExtension = /\.(?:png|jpe?g|gif|webp|avif)$/i.test(pathname);
+    const isLoven7Image = url.hostname === 'img.loven7.com' && pathname.startsWith('/file/');
+
+    return /^https?:$/.test(url.protocol) && (hasImageExtension || isLoven7Image)
+      ? url.toString()
+      : null;
+  } catch (error) {
+    return null;
+  }
+}
 
 function remarkImageUrls() {
   return (tree) => {
@@ -9,12 +26,14 @@ function remarkImageUrls() {
       if (!node || !Array.isArray(node.children)) return;
 
       node.children = node.children.map((child) => {
-        const imageUrl = child.type === 'paragraph'
-          && child.children?.length === 1
-          && child.children[0].type === 'text'
-          && imageUrlPattern.test(child.children[0].value.trim())
-          ? child.children[0].value.trim()
+        const singleChild = child.type === 'paragraph' && child.children?.length === 1
+          ? child.children[0]
           : null;
+        const imageUrl = singleChild?.type === 'text'
+          ? extractImageUrl(singleChild.value)
+          : singleChild?.type === 'link'
+            ? extractImageUrl(singleChild.url)
+            : null;
 
         if (imageUrl) {
           return {
@@ -38,11 +57,57 @@ function remarkImageUrls() {
   };
 }
 
+function rehypeImageLinks() {
+  return (tree) => {
+    function walk(node) {
+      if (!node || !Array.isArray(node.children)) return;
+
+      node.children = node.children.map((child) => {
+        const singleChild = child.type === 'element'
+          && child.tagName === 'p'
+          && child.children?.length === 1
+          ? child.children[0]
+          : null;
+        const href = singleChild?.type === 'element' && singleChild.tagName === 'a'
+          ? singleChild.properties?.href
+          : null;
+        const imageUrl = typeof href === 'string' ? extractImageUrl(href) : null;
+
+        if (imageUrl) {
+          return {
+            type: 'element',
+            tagName: 'p',
+            properties: {},
+            children: [
+              {
+                type: 'element',
+                tagName: 'img',
+                properties: {
+                  src: imageUrl,
+                  alt: '图片',
+                  loading: 'lazy',
+                },
+                children: [],
+              },
+            ],
+          };
+        }
+
+        walk(child);
+        return child;
+      });
+    }
+
+    walk(tree);
+  };
+}
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://blog.loven7.com',
   trailingSlash: 'ignore',
   markdown: {
     remarkPlugins: [remarkImageUrls],
+    rehypePlugins: [rehypeImageLinks],
   },
 });

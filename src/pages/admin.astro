@@ -363,8 +363,23 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
         document.body.appendChild(script);
       }
 
-      function isImageUrl(value) {
-        return /^https?:\/\/\S+\.(?:png|jpe?g|gif|webp|avif)(?:[?#]\S*)?$/i.test(value.trim());
+      function extractImageUrl(value) {
+        const trimmed = value.trim();
+        const markdownImage = trimmed.match(/^!\[[^\]]*]\(([^)]+)\)$/);
+        const candidate = markdownImage ? markdownImage[1].trim() : trimmed;
+
+        try {
+          const url = new URL(candidate);
+          const pathname = url.pathname.toLowerCase();
+          const hasImageExtension = /\.(?:png|jpe?g|gif|webp|avif)$/i.test(pathname);
+          const isLoven7Image = url.hostname === 'img.loven7.com' && pathname.startsWith('/file/');
+
+          return /^https?:$/.test(url.protocol) && (hasImageExtension || isLoven7Image)
+            ? url.toString()
+            : null;
+        } catch (error) {
+          return null;
+        }
       }
 
       function getEditableTarget(target) {
@@ -390,19 +405,42 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
         document.execCommand('insertText', false, text);
       }
 
+      function escapeAttribute(value) {
+        return value
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      }
+
+      function insertImage(target, imageUrl) {
+        if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+          insertText(target, `\n\n![图片](${imageUrl})\n\n`);
+          return;
+        }
+
+        target.focus();
+        document.execCommand(
+          'insertHTML',
+          false,
+          `<p><img src="${escapeAttribute(imageUrl)}" alt="图片" /></p>`,
+        );
+      }
+
       function installImagePasteEnhancer() {
         if (window.__blogImagePasteEnhancerInstalled) return;
         window.__blogImagePasteEnhancerInstalled = true;
 
         document.addEventListener('paste', (event) => {
           const text = event.clipboardData?.getData('text/plain')?.trim() || '';
-          if (!isImageUrl(text)) return;
+          const imageUrl = extractImageUrl(text);
+          if (!imageUrl) return;
 
           const target = getEditableTarget(event.target);
           if (!target) return;
 
           event.preventDefault();
-          insertText(target, `\n\n![图片](${text})\n\n`);
+          insertImage(target, imageUrl);
         }, true);
       }
 
