@@ -24,7 +24,7 @@ on:
       draft:
         description: 是否保存为草稿
         required: true
-        default: true
+        default: false
         type: boolean
 
 permissions:
