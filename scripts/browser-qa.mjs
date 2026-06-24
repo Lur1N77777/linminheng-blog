@@ -191,6 +191,7 @@ async function main() {
     throw new Error('Browser QA requires at least one published blog post');
   }
   const primaryPost = posts[0];
+  const primaryPostUrl = new URL(`/blog/${primaryPost.slug}/`, 'https://blog.loven7.com').toString();
   const routes = ['/', '/blog/', `/blog/${primaryPost.slug}/`, '/admin/'];
 
   const cmsAsset = join(process.cwd(), 'public', 'vendor', 'sveltia-cms-0.167.3.js');
@@ -243,9 +244,9 @@ async function main() {
     }
     const seoChecks = [
       ['/robots.txt', ['Sitemap: https://blog.loven7.com/sitemap.xml', 'Disallow: /admin/']],
-      ['/sitemap.xml', ['https://blog.loven7.com/', `https://blog.loven7.com/blog/${primaryPost.slug}/`]],
+      ['/sitemap.xml', ['https://blog.loven7.com/', primaryPostUrl]],
       ['/rss.xml', ['<rss version="2.0">', '<title>LinMinheng 的博文</title>', primaryPost.title]],
-      ['/site.webmanifest', ['"name": "LinMinheng — 一方天地"', '"src": "/assets/icon-512.png"']],
+      ['/site.webmanifest', ['"name": "LinMinheng"', '"src": "/assets/icon-512.png"']],
     ];
     for (const [route, expectedParts] of seoChecks) {
       const response = await fetch(`${baseUrl}${route}`);

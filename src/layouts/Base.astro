@@ -21,7 +21,7 @@ const {
 } = Astro.props;
 
 const {
-  title = `${profile.name} — 一方天地`,
+  title = profile.name,
   description = `${profile.name} 的个人空间 · 黄昏书房`,
   image,
   canonical,
@@ -55,7 +55,7 @@ const structuredData = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
     <link rel="alternate" type="application/rss+xml" title={`${profile.name} 的博文`} href="/rss.xml" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content={ogType} />
-    <meta property="og:site_name" content={`${profile.name} — 一方天地`} />
+    <meta property="og:site_name" content={profile.name} />
     <meta property="og:locale" content="zh_CN" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

@@ -6,7 +6,7 @@ function page({ scope }) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GitHub 登录 · 一方天地</title>
+    <title>GitHub 登录 · LinMinheng</title>
     <style>
       :root {
         color-scheme: dark;
