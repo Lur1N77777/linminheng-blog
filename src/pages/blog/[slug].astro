@@ -6,6 +6,7 @@ import { richText } from '../../utils/richText';
 import {
   formatPostDate,
   getAdjacentPosts,
+  getPostSlug,
   getPostUrl,
   getPublishedPosts,
   getReadingTime,
@@ -16,7 +17,7 @@ export async function getStaticPaths() {
   const posts = await getPublishedPosts();
 
   return posts.map((post) => ({
-    params: { slug: post.data.slug },
+    params: { slug: getPostSlug(post) },
     props: { post, posts },
   }));
 }

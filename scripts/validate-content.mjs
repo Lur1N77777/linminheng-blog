@@ -105,8 +105,6 @@ const schemas = {
   }).strict(),
 };
 
-const blogSlugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
 async function readJson(relativePath) {
   const absolutePath = join(root, relativePath);
   const raw = await readFile(absolutePath, 'utf8');
@@ -141,25 +139,58 @@ function readFrontmatterValue(frontmatter, key) {
   return value.trim();
 }
 
+function normalizeSlug(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function hashString(value) {
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(31, hash) + value.charCodeAt(index);
+  }
+
+  return Math.abs(hash).toString(36);
+}
+
+function derivePostSlug(file, explicitSlug) {
+  const normalizedExplicit = normalizeSlug(explicitSlug);
+  if (normalizedExplicit) return normalizedExplicit;
+
+  const withoutExtension = file.replace(/\.mdx?$/i, '');
+  const withoutDate = withoutExtension.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+
+  return normalizeSlug(withoutDate) || normalizeSlug(withoutExtension) || `post-${hashString(file)}`;
+}
+
 async function validateBlogPosts() {
   const directory = 'src/content/blog';
   const files = (await readdir(join(root, directory))).filter((file) => file.endsWith('.md'));
   let publishedCount = 0;
+  const seenSlugs = new Map();
   const issues = [];
 
   for (const file of files) {
     const relativePath = `${directory}/${file}`;
     const frontmatter = getFrontmatter(await readFile(join(root, relativePath), 'utf8'), relativePath);
-    const slug = readFrontmatterValue(frontmatter, 'slug');
+    const slug = derivePostSlug(file, readFrontmatterValue(frontmatter, 'slug'));
     const isDraft = /^draft:\s*true\s*$/m.test(frontmatter);
 
-    if (!slug) {
-      issues.push(`${relativePath}: missing slug`);
-    } else if (!blogSlugPattern.test(slug)) {
-      issues.push(`${relativePath}: slug must use lowercase letters, numbers, and hyphens`);
+    if (!isDraft) {
+      const existing = seenSlugs.get(slug);
+      if (existing) {
+        issues.push(`${relativePath}: duplicate public slug "${slug}" also used by ${existing}`);
+      }
+      seenSlugs.set(slug, relativePath);
+      publishedCount += 1;
     }
-
-    if (!isDraft) publishedCount += 1;
   }
 
   if (publishedCount === 0) {
@@ -174,8 +205,12 @@ async function validateCmsConfig() {
   const raw = await readFile(join(root, relativePath), 'utf8');
   const issues = [];
 
-  if (!/name:\s*slug[\s\S]*?pattern:[\s\S]*?\^\[a-z0-9\]\+/.test(raw)) {
-    issues.push(`${relativePath}: blog slug field must reject uppercase and invalid URL characters`);
+  if (!raw.includes('label: 链接名（可选）') || !/name:\s*slug[\s\S]*?required:\s*false/.test(raw)) {
+    issues.push(`${relativePath}: blog slug field must be optional so CMS saves are not blocked by URL formatting`);
+  }
+
+  if (/name:\s*slug[\s\S]*?pattern:/.test(raw)) {
+    issues.push(`${relativePath}: blog slug field must not use a CMS pattern that blocks saving`);
   }
 
   if (!/name:\s*draft[^\n]*default:\s*false/.test(raw)) {

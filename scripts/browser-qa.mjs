@@ -18,6 +18,37 @@ function readFrontmatterValue(frontmatter, key) {
   return value.trim();
 }
 
+function normalizeSlug(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function hashString(value) {
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(31, hash) + value.charCodeAt(index);
+  }
+
+  return Math.abs(hash).toString(36);
+}
+
+function derivePostSlug(file, explicitSlug) {
+  const normalizedExplicit = normalizeSlug(explicitSlug);
+  if (normalizedExplicit) return normalizedExplicit;
+
+  const withoutExtension = file.replace(/\.mdx?$/i, '');
+  const withoutDate = withoutExtension.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+
+  return normalizeSlug(withoutDate) || normalizeSlug(withoutExtension) || `post-${hashString(file)}`;
+}
+
 function getPublishedBlogPosts() {
   const directory = join(process.cwd(), 'src', 'content', 'blog');
 
@@ -30,11 +61,11 @@ function getPublishedBlogPosts() {
       return {
         file,
         title: readFrontmatterValue(frontmatter, 'title'),
-        slug: readFrontmatterValue(frontmatter, 'slug'),
+        slug: derivePostSlug(file, readFrontmatterValue(frontmatter, 'slug')),
         draft: /^draft:\s*true\s*$/m.test(frontmatter),
       };
     })
-    .filter((post) => post.slug && !post.draft);
+    .filter((post) => !post.draft);
 }
 
 function getOpenPort() {

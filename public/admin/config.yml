@@ -21,13 +21,11 @@ collections:
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - { label: 标题, name: title, widget: string }
-      - label: 链接名
+      - label: 链接名（可选）
         name: slug
         widget: string
-        hint: "英文小写短链接,例如 first-post 或 personal-site"
-        pattern:
-          - "^[a-z0-9]+(?:-[a-z0-9]+)*$"
-          - "只能使用英文小写、数字和连字符,例如 first-post"
+        required: false
+        hint: "可留空。填写时建议用英文小写短链接,例如 first-post 或 personal-site。"
       - { label: 日期, name: date, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }
       - { label: 更新日期, name: updated, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD", required: false }
       - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }

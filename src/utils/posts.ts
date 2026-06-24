@@ -14,8 +14,20 @@ export async function getPublishedPosts(): Promise<BlogPost[]> {
   return posts.sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
 }
 
+export function getPostSlug(post: BlogPost): string {
+  const explicitSlug = normalizeSlug(post.data.slug ?? '');
+  if (explicitSlug) return explicitSlug;
+
+  const filename = post.id.replace(/\\/g, '/').split('/').pop() ?? post.id;
+  const withoutExtension = filename.replace(/\.mdx?$/i, '');
+  const withoutDate = withoutExtension.replace(/^\d{4}-\d{2}-\d{2}-/, '');
+  const fileSlug = normalizeSlug(withoutDate) || normalizeSlug(withoutExtension);
+
+  return fileSlug || `post-${hashString(post.id)}`;
+}
+
 export function getPostUrl(post: BlogPost): string {
-  return `/blog/${post.data.slug}/`;
+  return `/blog/${getPostSlug(post)}/`;
 }
 
 export function formatPostDate(value: Date): string {
@@ -40,7 +52,8 @@ export function getReadingTime(post: BlogPost): string {
 }
 
 export function getAdjacentPosts(posts: BlogPost[], current: BlogPost): PostNav {
-  const index = posts.findIndex((post) => post.data.slug === current.data.slug);
+  const currentSlug = getPostSlug(current);
+  const index = posts.findIndex((post) => getPostSlug(post) === currentSlug);
 
   return {
     previous: index >= 0 ? posts[index + 1] : undefined,
@@ -52,11 +65,33 @@ function assertUniqueSlugs(posts: BlogPost[]): void {
   const seen = new Map<string, string>();
 
   for (const post of posts) {
-    const existing = seen.get(post.data.slug);
+    const slug = getPostSlug(post);
+    const existing = seen.get(slug);
     if (existing) {
-      throw new Error(`Duplicate blog slug "${post.data.slug}" in ${existing} and ${post.id}`);
+      throw new Error(`Duplicate blog slug "${slug}" in ${existing} and ${post.id}`);
     }
 
-    seen.set(post.data.slug, post.id);
+    seen.set(slug, post.id);
   }
+}
+
+function normalizeSlug(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/[^\p{Letter}\p{Number}]+/gu, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function hashString(value: string): string {
+  let hash = 0;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash = Math.imul(31, hash) + value.charCodeAt(index);
+  }
+
+  return Math.abs(hash).toString(36);
 }
