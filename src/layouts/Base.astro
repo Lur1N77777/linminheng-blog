@@ -12,6 +12,8 @@ interface Props {
   showReadingProgress?: boolean;
   ogType?: 'website' | 'article';
   profile?: Profile;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  robots?: string;
 }
 
 const {
@@ -27,11 +29,16 @@ const {
   layout = 'split',
   showReadingProgress = false,
   ogType = 'website',
+  jsonLd,
+  robots = 'index, follow',
 } = Astro.props;
 
 const siteUrl = Astro.site ?? new URL(Astro.url.origin);
 const canonicalUrl = canonical ? new URL(canonical, siteUrl).toString() : new URL(Astro.url.pathname, siteUrl).toString();
-const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
+const socialImage = image ?? '/assets/social-card.png';
+const imageUrl = new URL(socialImage, siteUrl).toString();
+const usesDefaultSocialImage = !image;
+const structuredData = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
 ---
 
 <!DOCTYPE html>
@@ -41,14 +48,30 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FAF6EE" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#17130d" />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" type="application/rss+xml" title={`${profile.name} 的博文`} href="/rss.xml" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={`${profile.name} — 一方天地`} />
+    <meta property="og:locale" content="zh_CN" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
-    {imageUrl && <meta property="og:image" content={imageUrl} />}
-    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta property="og:image" content={imageUrl} />
+    {usesDefaultSocialImage && <meta property="og:image:width" content="1200" />}
+    {usesDefaultSocialImage && <meta property="og:image:height" content="630" />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
     <link rel="icon" href="/assets/loven7-logo.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+    {structuredData.map((item) => (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(item)} />
+    ))}
 
     <!-- 字体:Fraunces 做标题,Inter 做正文,加载失败优雅回退到系统字体 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -72,8 +95,8 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
   </head>
 
   <body class={bodyClass || undefined}>
+    <a class="skip-link" href="#main-content">跳到正文</a>
     {showReadingProgress && <div class="reading-progress" id="readingProgress" aria-hidden="true"></div>}
-    <div class="spotlight" aria-hidden="true"></div>
 
     <!-- 配色切换器:平时收起为一个调色盘图标,点击才优雅展开 -->
     <div class="palette" id="palette">
@@ -109,7 +132,7 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
       </div>
     </div>
 
-    <div class="wrap">
+    <div class="wrap" id="main-content" tabindex="-1">
       <div class={`layout layout-${layout}`}>
         <slot />
       </div>
@@ -118,13 +141,13 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
     <script>
       const root = document.documentElement;
       const storage = {
-        get(key) {
+        get(key: string) {
           try { return localStorage.getItem(key); } catch { return null; }
         },
-        set(key, value) {
+        set(key: string, value: string) {
           try { localStorage.setItem(key, value); } catch {}
         },
-        json(key) {
+        json(key: string) {
           try { return JSON.parse(localStorage.getItem(key) || 'null'); } catch { return null; }
         },
       };
@@ -167,7 +190,7 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
         });
       });
 
-      function setPaletteOpen(open) {
+      function setPaletteOpen(open: boolean) {
         if (!palette || !paletteTrigger) return;
         palette.classList.toggle('open', open);
         paletteTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -178,7 +201,7 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
         setPaletteOpen(!palette?.classList.contains('open'));
       });
       document.addEventListener('click', (event) => {
-        if (palette && !palette.contains(event.target)) setPaletteOpen(false);
+        if (palette && event.target instanceof Node && !palette.contains(event.target)) setPaletteOpen(false);
       });
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') setPaletteOpen(false);
@@ -186,23 +209,6 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
 
       syncThemeToggleLabel();
       syncSwatchActive();
-
-      const spotlight = document.querySelector('.spotlight');
-      const canTrackPointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-      if (spotlight && canTrackPointer) {
-        let tx = 0, ty = 0, cx = 0, cy = 0;
-        window.addEventListener('mousemove', (event) => {
-          tx = event.clientX;
-          ty = event.clientY;
-        }, { passive: true });
-        (function loop() {
-          cx += (tx - cx) * 0.12;
-          cy += (ty - cy) * 0.12;
-          spotlight.style.setProperty('--mx', cx + 'px');
-          spotlight.style.setProperty('--my', cy + 'px');
-          requestAnimationFrame(loop);
-        })();
-      }
 
       const navLinks = Array.from(document.querySelectorAll('.nav-link'));
       const sections = Array.from(document.querySelectorAll('section[id]'));
@@ -212,7 +218,13 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
             if (!entry.isIntersecting) return;
             const id = entry.target.id;
             navLinks.forEach((link) => {
-              link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+              const active = link.getAttribute('href') === '#' + id;
+              link.classList.toggle('active', active);
+              if (active) {
+                link.setAttribute('aria-current', 'true');
+              } else {
+                link.removeAttribute('aria-current');
+              }
             });
           });
         }, { rootMargin: '-45% 0px -50% 0px' });
@@ -226,7 +238,7 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
           });
         }, { threshold: 0.15 });
         document.querySelectorAll('[data-reveal]').forEach((el, index) => {
-          el.style.transitionDelay = (index % 4) * 0.06 + 's';
+          if (el instanceof HTMLElement) el.style.transitionDelay = (index % 4) * 0.06 + 's';
           revealer.observe(el);
         });
       } else {
@@ -242,73 +254,37 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
         });
       });
 
-      (function syncStars() {
-        const CACHE_TTL = 60 * 60 * 1000;
-        document.querySelectorAll('.card.project[data-repo]').forEach(async (card) => {
-          const repo = card.getAttribute('data-repo');
-          const numEl = card.querySelector('.star-num');
-          const badge = card.querySelector('.tag.star');
-          if (!repo || !numEl) return;
-
-          const cacheKey = 'stars:' + repo;
-          const cached = storage.json(cacheKey);
-          if (cached && Date.now() - cached.t < CACHE_TTL) {
-            render(cached.n);
-            return;
-          }
-
-          badge?.classList.add('updating');
-          try {
-            const res = await fetch('https://api.github.com/repos/' + repo, {
-              headers: { 'Accept': 'application/vnd.github+json' },
-            });
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-            const n = data.stargazers_count;
-            if (typeof n === 'number') {
-              storage.set(cacheKey, JSON.stringify({ n, t: Date.now() }));
-              render(n);
-            }
-          } catch (error) {
-            console.warn('星标同步失败(已回退到本地数字):', repo, error);
-          } finally {
-            badge?.classList.remove('updating');
-          }
-
-          function render(n) {
-            const old = parseInt(numEl.textContent || '', 10);
-            numEl.textContent = String(n);
-            if (!Number.isNaN(old) && old !== n) {
-              numEl.classList.remove('bump');
-              void numEl.offsetWidth;
-              numEl.classList.add('bump');
-            }
-          }
-        });
-      })();
-
       const readingProgress = document.getElementById('readingProgress');
       if (readingProgress) {
+        let ticking = false;
         const updateReadingProgress = () => {
           const scrollable = document.documentElement.scrollHeight - window.innerHeight;
           const progress = scrollable > 0 ? window.scrollY / scrollable : 0;
           readingProgress.style.transform = 'scaleX(' + Math.min(1, Math.max(0, progress)) + ')';
+          ticking = false;
+        };
+        const scheduleReadingProgress = () => {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(updateReadingProgress);
         };
 
         updateReadingProgress();
-        window.addEventListener('scroll', updateReadingProgress, { passive: true });
-        window.addEventListener('resize', updateReadingProgress);
+        window.addEventListener('scroll', scheduleReadingProgress, { passive: true });
+        window.addEventListener('resize', scheduleReadingProgress);
       }
 
       (async function syncVisitorStats() {
         const stats = Array.from(document.querySelectorAll('[data-visitor-stat]'));
         if (!stats.length) return;
+        if (['localhost', '127.0.0.1', '::1'].includes(location.hostname)) return;
 
         try {
           const response = await fetch('/api/visitors', {
             headers: { accept: 'application/json' },
             cache: 'no-store',
           });
+          if (!response.ok) return;
           const data = await response.json();
 
           if (!data?.configured || typeof data.count !== 'number') return;
@@ -317,7 +293,7 @@ const imageUrl = image ? new URL(image, siteUrl).toString() : undefined;
             el.textContent = new Intl.NumberFormat('zh-CN').format(data.count);
           });
           stats.forEach((el) => {
-            el.hidden = false;
+            if (el instanceof HTMLElement) el.hidden = false;
           });
         } catch (error) {
           console.warn('访客统计加载失败:', error);

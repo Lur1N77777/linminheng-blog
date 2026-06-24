@@ -7,6 +7,27 @@ import { formatPostDate, getPostUrl, getPublishedPosts, getReadingTime } from '.
 const posts = await getPublishedPosts();
 const years = Array.from(new Set(posts.map((post) => post.data.date.getFullYear()))).sort((a, b) => b - a);
 const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+const siteUrl = Astro.site ?? new URL(Astro.url.origin);
+const blogUrl = new URL('/blog/', siteUrl).toString();
+const blogJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Blog',
+  name: `博文 — ${profile.name}`,
+  url: blogUrl,
+  description: 'LinMinheng 的全部博客文章。',
+  inLanguage: 'zh-CN',
+  author: {
+    '@type': 'Person',
+    name: profile.name,
+  },
+  blogPost: posts.map((post) => ({
+    '@type': 'BlogPosting',
+    headline: post.data.title,
+    url: new URL(getPostUrl(post), siteUrl).toString(),
+    datePublished: post.data.date.toISOString(),
+    dateModified: (post.data.updated ?? post.data.date).toISOString(),
+  })),
+};
 ---
 
 <Base
@@ -16,6 +37,7 @@ const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).sort((
   title={`博文 — ${profile.name}`}
   description="LinMinheng 的全部博客文章。"
   canonical="/blog/"
+  jsonLd={blogJsonLd}
 >
   <main class="single-page">
     <header class="page-hero" data-intro style="--i:0">
@@ -88,14 +110,14 @@ const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).sort((
   </main>
 
   <script>
-    const searchInput = document.querySelector('[data-post-search]');
-    const items = Array.from(document.querySelectorAll('[data-post-item]'));
+    const searchInput = document.querySelector<HTMLInputElement>('[data-post-search]');
+    const items = Array.from(document.querySelectorAll<HTMLElement>('[data-post-item]'));
     const countEl = document.querySelector('[data-result-count]');
-    const emptyEl = document.querySelector('[data-empty-state]');
+    const emptyEl = document.querySelector<HTMLElement>('[data-empty-state]');
     const resetButton = document.querySelector('[data-reset-filters]');
-    const state = { year: 'all', tag: 'all', query: '' };
+    const state: { year: string; tag: string; query: string } = { year: 'all', tag: 'all', query: '' };
 
-    function setActive(group, value) {
+    function setActive(group: 'year' | 'tag', value: string) {
       document.querySelectorAll(`[data-filter-group="${group}"] .filter-chip`).forEach((button) => {
         const active = button.getAttribute('data-filter-value') === value;
         button.classList.toggle('active', active);
@@ -135,7 +157,7 @@ const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).sort((
       const group = groupEl.getAttribute('data-filter-group');
       groupEl.querySelectorAll('.filter-chip').forEach((button) => {
         button.addEventListener('click', () => {
-          if (!group) return;
+          if (group !== 'year' && group !== 'tag') return;
           state[group] = button.getAttribute('data-filter-value') || 'all';
           setActive(group, state[group]);
           applyFilters();

@@ -8,7 +8,11 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="LinMinheng 的内容管理后台。" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://blog.loven7.com/admin/" />
     <title>{title}</title>
+    <link rel="icon" href="/assets/loven7-logo.svg" type="image/svg+xml" />
     <style>
       :root {
         color-scheme: dark;
@@ -341,15 +345,27 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
       }
 
       function loadCms() {
+        if (window.__blogCmsLoaded || window.__blogCmsLoading) return;
+        window.__blogCmsLoading = true;
         document.body.classList.add('loading-cms', 'unlocked');
+        setStatus('正在加载内容编辑器...');
         installCmsTheme();
         installCmsScrollSmoother();
         installImagePasteEnhancer();
         relayStoredAuthMessage();
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/@sveltia/cms/dist/sveltia-cms.js';
+        script.src = '/vendor/sveltia-cms-0.167.3.js?v=20260624-csp';
         script.async = true;
+        const loadTimer = window.setTimeout(() => {
+          script.remove();
+          window.__blogCmsLoading = false;
+          document.body.classList.remove('loading-cms', 'cms-ready', 'unlocked');
+          setStatus('内容编辑器加载超时，请稍后重试。', true);
+        }, 15_000);
         script.addEventListener('load', () => {
+          window.clearTimeout(loadTimer);
+          window.__blogCmsLoaded = true;
+          window.__blogCmsLoading = false;
           document.body.classList.remove('loading-cms');
           document.body.classList.add('cms-ready');
           setTimeout(installCmsTheme, 0);
@@ -359,8 +375,11 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           relayStoredAuthMessage();
         });
         script.addEventListener('error', () => {
-          document.body.classList.remove('loading-cms', 'cms-ready');
-          setStatus('内容编辑器加载失败，请检查网络后刷新重试。', true);
+          window.clearTimeout(loadTimer);
+          window.__blogCmsLoading = false;
+          document.body.classList.remove('loading-cms', 'cms-ready', 'unlocked');
+          script.remove();
+          setStatus('内容编辑器加载失败，请检查网络后点击进入后台重试。', true);
         });
         document.body.appendChild(script);
       }
@@ -473,6 +492,37 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
         target.dispatchEvent(event);
       }
 
+      function insertContentEditableNode(target, node) {
+        target.focus();
+
+        const selection = window.getSelection();
+        if (!selection) return;
+
+        function isSelectionInsideTarget() {
+          if (!selection.rangeCount) return false;
+          const container = selection.getRangeAt(0).commonAncestorContainer;
+          const element = container instanceof Element ? container : container.parentElement;
+          return Boolean(element && target.contains(element));
+        }
+
+        if (!isSelectionInsideTarget()) {
+          selection.removeAllRanges();
+          const range = document.createRange();
+          range.selectNodeContents(target);
+          range.collapse(false);
+          selection.addRange(range);
+        }
+
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(node);
+        range.setStartAfter(node);
+        range.collapse(true);
+        selection.removeAllRanges();
+        selection.addRange(range);
+        dispatchEditorInput(target);
+      }
+
       function insertText(target, text) {
         if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
           const start = target.selectionStart ?? target.value.length;
@@ -482,9 +532,7 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           return;
         }
 
-        target.focus();
-        document.execCommand('insertText', false, text);
-        dispatchEditorInput(target);
+        insertContentEditableNode(target, document.createTextNode(text));
       }
 
       function escapeAttribute(value) {
@@ -501,13 +549,12 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
           return;
         }
 
-        target.focus();
-        document.execCommand(
-          'insertHTML',
-          false,
-          `<p><img src="${escapeAttribute(imageUrl)}" alt="图片" /></p>`,
-        );
-        dispatchEditorInput(target);
+        const paragraph = document.createElement('p');
+        const image = document.createElement('img');
+        image.src = imageUrl;
+        image.alt = '图片';
+        paragraph.appendChild(image);
+        insertContentEditableNode(target, paragraph);
       }
 
       function dispatchImagePaste(target, imageUrl) {
@@ -705,9 +752,9 @@ const passwordHash = 'd06ac7d1744a8b201b4dd97e960ae84ef4526e412ca828377850d8a44d
 
       form?.addEventListener('submit', async (event) => {
         event.preventDefault();
-        const value = input?.value || '';
+        const value = (input?.value || '').trim();
 
-        if (!value.trim()) {
+        if (!value) {
           setStatus('请输入管理员密码。', true);
           input?.focus();
           return;

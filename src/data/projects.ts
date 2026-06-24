@@ -1,14 +1,9 @@
 import projectsContent from './content/projects.json';
+import { projectsContentSchema, type Project } from './schema';
 
-export type Project = {
-  name: string;
-  href: string;
-  repo?: string;
-  stars?: number;
-  desc: string;
-  logo?: string;
-  tags: string[];
-};
+const parsedProjectsContent = projectsContentSchema.parse(projectsContent);
 
-export const projects = projectsContent.projects as Project[];
-export const githubProfile = projectsContent.githubProfile;
+export type { Project };
+
+export const projects: Project[] = parsedProjectsContent.projects;
+export const githubProfile = parsedProjectsContent.githubProfile;

@@ -21,12 +21,18 @@ collections:
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
       - { label: 标题, name: title, widget: string }
-      - { label: 链接名, name: slug, widget: string, hint: "英文小写短链接,例如 cloudmail 或 personal-site" }
+      - label: 链接名
+        name: slug
+        widget: string
+        hint: "英文小写短链接,例如 first-post 或 personal-site"
+        pattern:
+          - "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+          - "只能使用英文小写、数字和连字符,例如 first-post"
       - { label: 日期, name: date, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD" }
       - { label: 更新日期, name: updated, widget: datetime, date_format: "YYYY-MM-DD", time_format: false, format: "YYYY-MM-DD", required: false }
       - { label: 标签, name: tags, widget: list, field: { label: 标签, name: tag, widget: string }, required: false }
       - { label: 摘要, name: excerpt, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true }
-      - { label: 草稿, name: draft, widget: boolean, default: true }
+      - { label: 保存为草稿（不公开）, name: draft, widget: boolean, default: false, hint: "开启后不会显示在首页、博客列表、RSS 和站点地图。" }
       - { label: 封面图, name: cover, widget: image, required: false }
       - { label: 结尾小字, name: foot, widget: markdown, buttons: [bold, italic, code, link], modes: [rich_text, raw], minimal: true, required: false }
       - { label: 正文, name: body, widget: markdown, hint: "图床图片直接把图片链接粘贴到正文里即可,不要点图片按钮。", buttons: [bold, italic, code, link, heading-one, heading-two, quote, bulleted-list, numbered-list], modes: [rich_text, raw] }

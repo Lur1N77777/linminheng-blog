@@ -1,4 +1,4 @@
-const CLIENT_ID = 'Ov23liznygioUFqG4IFY';
+import { getGithubAuthScope, getGithubClientId, noStoreJson } from '../_shared/github-oauth.js';
 
 async function readJSON(request) {
   try {
@@ -8,24 +8,38 @@ async function readJSON(request) {
   }
 }
 
-export async function onRequestPost({ request }) {
-  const { scope = 'repo,user' } = await readJSON(request);
+export async function onRequestPost({ env, request }) {
+  const { scope = '' } = await readJSON(request);
 
-  const response = await fetch('https://github.com/login/device/code', {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      client_id: CLIENT_ID,
-      scope,
-    }),
-  });
+  let response;
+  try {
+    response = await fetch('https://github.com/login/device/code', {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: getGithubClientId(env),
+        scope: getGithubAuthScope(env, scope),
+      }),
+    });
+  } catch {
+    return noStoreJson({
+      error: 'github_unreachable',
+      error_description: 'GitHub authorization service is unreachable.',
+    }, { status: 502 });
+  }
 
-  const result = await response.json();
+  let result;
+  try {
+    result = await response.json();
+  } catch {
+    return noStoreJson({
+      error: 'github_invalid_response',
+      error_description: 'GitHub authorization service returned an invalid response.',
+    }, { status: 502 });
+  }
 
-  return Response.json(result, {
-    headers: { 'cache-control': 'no-store' },
-  });
+  return noStoreJson(result, { status: response.ok ? 200 : response.status });
 }

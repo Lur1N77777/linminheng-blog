@@ -225,7 +225,11 @@ html[data-palette][data-theme] {
    ============================================================ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 
 body {
   background: var(--bg);
@@ -260,6 +264,33 @@ button,
   outline-offset: 4px;
 }
 
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-tint);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  transform: translateY(calc(-100% - 2rem));
+  transition: transform var(--speed-fast) var(--ease-out);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+#main-content:focus {
+  outline: none;
+}
+
 /* 滚动条 */
 ::-webkit-scrollbar { width: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -269,18 +300,6 @@ button,
   border: 3px solid var(--bg);
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-/* ============================================================
-   静默背景层 —— 保留节点,不再制造光晕或反光
-   ============================================================ */
-.spotlight {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  display: none;
-  background: none;
-}
 
 /* ============================================================
    布局 —— 左固定名片 / 右滚动内容流
@@ -1038,6 +1057,8 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   font-weight: 400;
   letter-spacing: 0;
   line-height: 1.08;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .page-title {
@@ -1218,6 +1239,19 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   font-size: 0.94rem;
 }
 
+.not-found-shell {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.not-found-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .article-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1247,6 +1281,7 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
   color: var(--text-muted);
   font-size: 1rem;
   line-height: 1.86;
+  text-wrap: pretty;
 }
 
 .article-content > * {
@@ -1473,10 +1508,13 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
 
   .archive-tools {
     gap: var(--space-3);
+    margin-bottom: var(--space-6);
+    padding: var(--space-3) 0 var(--space-4);
   }
 
   .archive-filter-group {
     align-items: flex-start;
+    gap: 0.45rem;
   }
 
   .archive-filter-label {
@@ -1487,6 +1525,16 @@ html[data-theme="dark"] .theme-toggle .sun  { display: none; }
     align-items: flex-start;
     flex-direction: column;
     gap: var(--space-2);
+  }
+
+  .archive-search input {
+    min-height: 42px;
+  }
+
+  .filter-chip,
+  .archive-reset {
+    min-height: 32px;
+    padding: 0.28rem 0.66rem;
   }
 
   .archive-meta {

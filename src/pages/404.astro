@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import { profile } from '../data/profile';
+---
+
+<Base
+  profile={profile}
+  layout="single"
+  bodyClass="not-found-page"
+  title={`页面没有找到 — ${profile.name}`}
+  description="这个页面不存在或已经被移动。"
+  canonical="/404/"
+  robots="noindex, nofollow"
+>
+  <main class="single-page not-found-shell">
+    <header class="page-hero" data-intro style="--i:0">
+      <a class="back-link" href="/">返回首页</a>
+      <p class="page-kicker">404</p>
+      <h1 class="page-title">页面没有找到</h1>
+      <p class="page-desc">可能是链接写错了,也可能是这篇内容后来换了位置。</p>
+    </header>
+
+    <nav class="not-found-actions" aria-label="继续浏览">
+      <a class="section-action" href="/">回到首页</a>
+      <a class="section-action" href="/blog/">查看博文</a>
+    </nav>
+  </main>
+</Base>

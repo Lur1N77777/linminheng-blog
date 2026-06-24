@@ -1,35 +1,9 @@
 import profileContent from './content/profile.json';
+import { profileContentSchema, type Profile } from './schema';
 
-export type Palette =
-  | 'amber'
-  | 'pine'
-  | 'terra'
-  | 'indigo'
-  | 'heather'
-  | 'ink'
-  | 'stone'
-  | 'olive'
-  | 'onyx'
-  | 'claude'
-  | 'openai';
+export type { Palette, Profile, Socials, Theme } from './schema';
 
-export type Theme = 'dark' | 'light';
+const parsedProfileContent = profileContentSchema.parse(profileContent);
 
-export type Socials = {
-  github: string;
-  instagram: string;
-  email: string;
-};
-
-export type Profile = {
-  name: string;
-  title: string;
-  tagline: string;
-  foot: string;
-  defaultPalette: Palette;
-  defaultTheme: Theme;
-  socials: Socials;
-};
-
-export const profile = profileContent.profile as Profile;
-export const about = profileContent.about as string[];
+export const profile: Profile = parsedProfileContent.profile;
+export const about = parsedProfileContent.about;

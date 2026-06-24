@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import { unified } from '@astrojs/markdown-remark';
 
 const imageExtensions = [
   'avif',
@@ -18,6 +19,9 @@ const imageExtensions = [
   'webp',
 ];
 
+/**
+ * @param {string} value
+ */
 function extractImageUrl(value) {
   const trimmed = value.trim();
   const markdownImage = trimmed.match(/^!\[[^\]]*]\(([^)]+)\)$/);
@@ -39,11 +43,13 @@ function extractImageUrl(value) {
 }
 
 function remarkImageUrls() {
+  /** @param {any} tree */
   return (tree) => {
+    /** @param {any} node */
     function walk(node) {
       if (!node || !Array.isArray(node.children)) return;
 
-      node.children = node.children.map((child) => {
+      node.children = node.children.map(/** @param {any} child */ (child) => {
         const singleChild = child.type === 'paragraph' && child.children?.length === 1
           ? child.children[0]
           : null;
@@ -76,11 +82,13 @@ function remarkImageUrls() {
 }
 
 function rehypeImageLinks() {
+  /** @param {any} tree */
   return (tree) => {
+    /** @param {any} node */
     function walk(node) {
       if (!node || !Array.isArray(node.children)) return;
 
-      node.children = node.children.map((child) => {
+      node.children = node.children.map(/** @param {any} child */ (child) => {
         const singleChild = child.type === 'element'
           && child.tagName === 'p'
           && child.children?.length === 1
@@ -104,6 +112,7 @@ function rehypeImageLinks() {
                   src: imageUrl,
                   alt: '图片',
                   loading: 'lazy',
+                  decoding: 'async',
                 },
                 children: [],
               },
@@ -125,7 +134,9 @@ export default defineConfig({
   site: 'https://blog.loven7.com',
   trailingSlash: 'ignore',
   markdown: {
-    remarkPlugins: [remarkImageUrls],
-    rehypePlugins: [rehypeImageLinks],
+    processor: unified({
+      remarkPlugins: [remarkImageUrls],
+      rehypePlugins: [rehypeImageLinks],
+    }),
   },
 });

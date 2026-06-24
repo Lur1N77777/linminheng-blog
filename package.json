@@ -7,12 +7,29 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "check": "astro sync && astro build",
+    "typecheck": "astro check",
+    "validate:content": "node scripts/validate-content.mjs",
+    "validate:headers": "node scripts/validate-headers.mjs",
+    "qa:functions": "node scripts/functions-qa.mjs",
+    "audit": "npm audit --omit=dev",
+    "qa:browser": "node scripts/browser-qa.mjs",
+    "check": "npm run typecheck && npm run validate:content && npm run validate:headers && npm run qa:functions && npm run build",
+    "qa": "npm run check && npm run audit && npm run qa:browser",
     "new:post": "node scripts/new-post.mjs",
     "new:project": "node scripts/new-card.mjs project",
     "new:site": "node scripts/new-card.mjs site"
   },
   "dependencies": {
-    "astro": "^5.6.1"
+    "@astrojs/markdown-remark": "^7.2.0",
+    "astro": "^7.0.2",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.2",
+    "playwright": "^1.61.1",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "volar-service-yaml": "0.0.71"
   }
 }

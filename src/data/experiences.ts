@@ -1,11 +1,8 @@
 import experiencesContent from './content/experiences.json';
+import { experiencesContentSchema, type Experience } from './schema';
 
-export type Experience = {
-  meta: string;
-  title: string;
-  desc: string;
-  tags: string[];
-  href?: string;
-};
+const parsedExperiencesContent = experiencesContentSchema.parse(experiencesContent);
 
-export const experiences = experiencesContent.experiences as Experience[];
+export type { Experience };
+
+export const experiences: Experience[] = parsedExperiencesContent.experiences;

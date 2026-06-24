@@ -1,6 +1,16 @@
 const DEFAULT_SALT = 'linminheng-blog-visitors';
 const COUNT_KEY = 'stats:unique_visitors';
 
+function noStoreJson(data, init = {}) {
+  return Response.json(data, {
+    ...init,
+    headers: {
+      'cache-control': 'no-store',
+      ...(init.headers || {}),
+    },
+  });
+}
+
 function getClientIp(request) {
   const headers = request.headers;
   const forwarded = headers.get('x-forwarded-for')?.split(',')[0]?.trim();
@@ -139,27 +149,31 @@ async function handleD1Visitors({ db, visitorHash, now, userAgent }) {
 
 export async function onRequestGet({ env, request }) {
   if (!env.VISITOR_KV && !env.VISITOR_DB) {
-    return Response.json(
-      { ok: false, configured: false, count: null },
-      { headers: { 'cache-control': 'no-store' } },
-    );
+    return noStoreJson({ ok: false, configured: false, count: null });
   }
 
   const now = new Date().toISOString();
   const visitorHash = await hashVisitor(getClientIp(request), env.VISITOR_SALT || DEFAULT_SALT);
   const userAgent = getUserAgent(request);
-  const result = env.VISITOR_KV
-    ? await handleKvVisitors({ kv: env.VISITOR_KV, visitorHash, now, userAgent })
-    : await handleD1Visitors({ db: env.VISITOR_DB, visitorHash, now, userAgent });
 
-  return Response.json(
-    {
+  try {
+    const result = env.VISITOR_KV
+      ? await handleKvVisitors({ kv: env.VISITOR_KV, visitorHash, now, userAgent })
+      : await handleD1Visitors({ db: env.VISITOR_DB, visitorHash, now, userAgent });
+
+    return noStoreJson({
       ok: true,
       configured: true,
       counted: result.counted,
       count: result.count,
       storage: result.storage,
-    },
-    { headers: { 'cache-control': 'no-store' } },
-  );
+    });
+  } catch {
+    return noStoreJson({
+      ok: false,
+      configured: true,
+      error: 'visitor_storage_unavailable',
+      count: null,
+    }, { status: 503 });
+  }
 }

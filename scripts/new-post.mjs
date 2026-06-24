@@ -14,7 +14,7 @@ function slugify(value) {
     .trim()
     .toLowerCase()
     .replace(/['"]/g, '')
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+    .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'untitled';
 }
 
@@ -61,7 +61,7 @@ try {
     counter += 1;
   }
 
-  const body = `---\ntitle: "${escapeYaml(title)}"\ndate: ${date}\ntags: [${tags.map((tag) => `"${escapeYaml(tag)}"`).join(', ')}]\nexcerpt: "${escapeYaml(excerpt)}"\ndraft: ${draft ? 'true' : 'false'}\n---\n\n正文从这里开始。\n`;
+  const body = `---\ntitle: "${escapeYaml(title)}"\nslug: "${escapeYaml(slug)}"\ndate: ${date}\ntags: [${tags.map((tag) => `"${escapeYaml(tag)}"`).join(', ')}]\nexcerpt: "${escapeYaml(excerpt)}"\ndraft: ${draft ? 'true' : 'false'}\n---\n\n正文从这里开始。\n`;
 
   await writeFile(filePath, body, 'utf8');
   output.write(`\n已创建: ${filePath}\n`);

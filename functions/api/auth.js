@@ -1,4 +1,4 @@
-const CLIENT_ID = 'Ov23liznygioUFqG4IFY';
+import { getGithubAuthScope } from '../_shared/github-oauth.js';
 
 function page({ scope }) {
   return `<!doctype html>
@@ -226,7 +226,7 @@ function page({ scope }) {
 </html>`;
 }
 
-export async function onRequestGet({ request }) {
+export async function onRequestGet({ env, request }) {
   const url = new URL(request.url);
   const provider = url.searchParams.get('provider');
 
@@ -234,12 +234,10 @@ export async function onRequestGet({ request }) {
     return new Response('Unsupported provider', { status: 400 });
   }
 
-  return new Response(page({ scope: url.searchParams.get('scope') || 'repo,user' }), {
+  return new Response(page({ scope: getGithubAuthScope(env, url.searchParams.get('scope') || '') }), {
     headers: {
       'content-type': 'text/html; charset=utf-8',
       'cache-control': 'no-store',
     },
   });
 }
-
-export { CLIENT_ID };

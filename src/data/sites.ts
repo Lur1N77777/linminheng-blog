@@ -1,11 +1,8 @@
 import sitesContent from './content/sites.json';
+import { sitesContentSchema, type Site } from './schema';
 
-export type Site = {
-  name: string;
-  href: string;
-  desc: string;
-  logo?: string;
-  tags: string[];
-};
+const parsedSitesContent = sitesContentSchema.parse(sitesContent);
 
-export const sites = sitesContent.sites as Site[];
+export type { Site };
+
+export const sites: Site[] = parsedSitesContent.sites;

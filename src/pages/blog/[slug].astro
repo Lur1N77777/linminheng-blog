@@ -25,6 +25,29 @@ const { post, posts } = Astro.props as { post: BlogPost; posts: BlogPost[] };
 const { Content } = await render(post);
 const nav = getAdjacentPosts(posts, post);
 const updated = post.data.updated ? formatPostDate(post.data.updated) : undefined;
+const siteUrl = Astro.site ?? new URL(Astro.url.origin);
+const articleUrl = new URL(getPostUrl(post), siteUrl).toString();
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: post.data.title,
+  description: post.data.excerpt,
+  url: articleUrl,
+  datePublished: post.data.date.toISOString(),
+  dateModified: (post.data.updated ?? post.data.date).toISOString(),
+  inLanguage: 'zh-CN',
+  author: {
+    '@type': 'Person',
+    name: profile.name,
+  },
+  publisher: {
+    '@type': 'Person',
+    name: profile.name,
+  },
+  mainEntityOfPage: articleUrl,
+  keywords: post.data.tags.join(', '),
+  ...(post.data.cover ? { image: new URL(post.data.cover, siteUrl).toString() } : {}),
+};
 ---
 
 <Base
@@ -37,6 +60,7 @@ const updated = post.data.updated ? formatPostDate(post.data.updated) : undefine
   canonical={getPostUrl(post)}
   ogType="article"
   showReadingProgress
+  jsonLd={articleJsonLd}
 >
   <main class="single-page">
     <article class="article-shell">
@@ -54,7 +78,7 @@ const updated = post.data.updated ? formatPostDate(post.data.updated) : undefine
 
       {post.data.cover && (
         <figure class="article-cover" data-reveal>
-          <img src={post.data.cover} alt="" loading="eager" />
+          <img src={post.data.cover} alt="" loading="eager" decoding="async" fetchpriority="high" />
         </figure>
       )}
 

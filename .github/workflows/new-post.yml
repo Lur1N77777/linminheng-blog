@@ -98,6 +98,7 @@ jobs:
           cat > "$file" <<EOF
           ---
           title: "$esc_title"
+          slug: "$slug"
           date: $date
           tags: $tags_json
           excerpt: "$esc_excerpt"

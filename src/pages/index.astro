@@ -9,9 +9,35 @@ import { formatPostDate, getPostUrl, getPublishedPosts, getReadingTime } from '.
 
 const posts = (await getPublishedPosts()).slice(0, 3);
 const { socials } = profile;
+const siteUrl = Astro.site ?? new URL(Astro.url.origin);
+const homeUrl = new URL('/', siteUrl).toString();
+const sameAs = [socials.github, socials.instagram].filter(Boolean);
+const homeJsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: profile.name,
+    url: homeUrl,
+    jobTitle: profile.title,
+    email: socials.email ? `mailto:${socials.email}` : undefined,
+    sameAs,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: `${profile.name} — 一方天地`,
+    url: homeUrl,
+    description: profile.tagline.replace(/<[^>]*>/g, ''),
+    inLanguage: 'zh-CN',
+    author: {
+      '@type': 'Person',
+      name: profile.name,
+    },
+  },
+].map((item) => JSON.parse(JSON.stringify(item)));
 ---
 
-<Base profile={profile}>
+<Base profile={profile} jsonLd={homeJsonLd}>
   <!-- ================= 左:个人名片 ================= -->
   <header class="col-left">
     <div>
@@ -107,7 +133,7 @@ const { socials } = profile;
             data-stars={proj.stars}
           >
             <div class="thumb">
-              {proj.logo ? <img src={proj.logo} alt={`${proj.name} logo`} loading="lazy" /> : proj.name}
+              {proj.logo ? <img src={proj.logo} alt={`${proj.name} logo`} width="256" height="192" loading="lazy" decoding="async" /> : proj.name}
             </div>
             <div>
               <div class="card-title">{proj.name} <span class="arrow">↗</span></div>
@@ -134,7 +160,7 @@ const { socials } = profile;
         {sites.map((site) => (
           <a class="card project" data-reveal href={site.href} target="_blank" rel="noopener">
             <div class="thumb">
-              {site.logo ? <img src={site.logo} alt={`${site.name} logo`} loading="lazy" /> : site.name}
+              {site.logo ? <img src={site.logo} alt={`${site.name} logo`} width="256" height="192" loading="lazy" decoding="async" /> : site.name}
             </div>
             <div>
               <div class="card-title">{site.name} <span class="arrow">↗</span></div>
