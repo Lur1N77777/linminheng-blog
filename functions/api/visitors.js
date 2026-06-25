@@ -1,5 +1,13 @@
+import {
+  COUNT_KEY,
+  ensureD1LocationSchema,
+  getLocationKey,
+  getRequestLocation,
+  recordD1Location,
+  recordKvLocation,
+} from '../_shared/visitor-geo.js';
+
 const DEFAULT_SALT = 'linminheng-blog-visitors';
-const COUNT_KEY = 'stats:unique_visitors';
 
 function noStoreJson(data, init = {}) {
   return Response.json(data, {
@@ -60,6 +68,8 @@ async function ensureSchema(db) {
       VALUES ('unique_visitors', 0)
     `),
   ]);
+
+  await ensureD1LocationSchema(db);
 }
 
 async function readCount(db) {
@@ -70,10 +80,17 @@ async function readCount(db) {
   return Number(row?.value || 0);
 }
 
-async function handleKvVisitors({ kv, visitorHash, now, userAgent }) {
+async function handleKvVisitors({ kv, visitorHash, now, userAgent, location }) {
   const visitorKey = `visitor:${visitorHash}`;
   const existing = await kv.get(visitorKey, 'json');
   const isNewVisitor = !existing;
+  const countLocationVisitor = !existing?.locationKey;
+  const locationKey = await recordKvLocation({
+    kv,
+    location,
+    now,
+    countUniqueVisitor: countLocationVisitor,
+  });
 
   if (isNewVisitor) {
     await kv.put(visitorKey, JSON.stringify({
@@ -81,6 +98,8 @@ async function handleKvVisitors({ kv, visitorHash, now, userAgent }) {
       lastSeen: now,
       visits: 1,
       userAgent,
+      location,
+      locationKey,
     }));
 
     const currentCount = Number(await kv.get(COUNT_KEY) || 0);
@@ -99,6 +118,9 @@ async function handleKvVisitors({ kv, visitorHash, now, userAgent }) {
     lastSeen: now,
     visits: Number(existing.visits || 0) + 1,
     userAgent,
+    location: existing.location || location,
+    lastLocation: location,
+    locationKey: existing.locationKey || locationKey,
   }));
 
   return {
@@ -108,18 +130,39 @@ async function handleKvVisitors({ kv, visitorHash, now, userAgent }) {
   };
 }
 
-async function handleD1Visitors({ db, visitorHash, now, userAgent }) {
+async function handleD1Visitors({ db, visitorHash, now, userAgent, location }) {
   await ensureSchema(db);
+  const locationKey = getLocationKey(location);
+  const existing = await db
+    .prepare('SELECT location_key FROM visitor_uniques WHERE visitor_hash = ?')
+    .bind(visitorHash)
+    .first();
 
   const inserted = await db
     .prepare(`
-      INSERT OR IGNORE INTO visitor_uniques (visitor_hash, first_seen, last_seen, visits, user_agent)
-      VALUES (?, ?, ?, 1, ?)
+      INSERT OR IGNORE INTO visitor_uniques (
+        visitor_hash, first_seen, last_seen, visits, user_agent,
+        country, region, city, colo, timezone, location_key
+      )
+      VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
     `)
-    .bind(visitorHash, now, now, userAgent)
+    .bind(
+      visitorHash,
+      now,
+      now,
+      userAgent,
+      location.country,
+      location.region,
+      location.city,
+      location.colo,
+      location.timezone,
+      locationKey,
+    )
     .run();
 
   const isNewVisitor = Number(inserted.meta?.changes || 0) > 0;
+  const countLocationVisitor = isNewVisitor || !existing?.location_key;
+  await recordD1Location({ db, location, now, countUniqueVisitor: countLocationVisitor });
 
   if (isNewVisitor) {
     await db
@@ -133,10 +176,29 @@ async function handleD1Visitors({ db, visitorHash, now, userAgent }) {
     await db
       .prepare(`
         UPDATE visitor_uniques
-        SET last_seen = ?, visits = visits + 1, user_agent = ?
+        SET
+          last_seen = ?,
+          visits = visits + 1,
+          user_agent = ?,
+          country = COALESCE(country, ?),
+          region = COALESCE(region, ?),
+          city = COALESCE(city, ?),
+          colo = COALESCE(colo, ?),
+          timezone = COALESCE(timezone, ?),
+          location_key = COALESCE(location_key, ?)
         WHERE visitor_hash = ?
       `)
-      .bind(now, userAgent, visitorHash)
+      .bind(
+        now,
+        userAgent,
+        location.country,
+        location.region,
+        location.city,
+        location.colo,
+        location.timezone,
+        locationKey,
+        visitorHash,
+      )
       .run();
   }
 
@@ -155,11 +217,12 @@ export async function onRequestGet({ env, request }) {
   const now = new Date().toISOString();
   const visitorHash = await hashVisitor(getClientIp(request), env.VISITOR_SALT || DEFAULT_SALT);
   const userAgent = getUserAgent(request);
+  const location = getRequestLocation(request);
 
   try {
     const result = env.VISITOR_KV
-      ? await handleKvVisitors({ kv: env.VISITOR_KV, visitorHash, now, userAgent })
-      : await handleD1Visitors({ db: env.VISITOR_DB, visitorHash, now, userAgent });
+      ? await handleKvVisitors({ kv: env.VISITOR_KV, visitorHash, now, userAgent, location })
+      : await handleD1Visitors({ db: env.VISITOR_DB, visitorHash, now, userAgent, location });
 
     return noStoreJson({
       ok: true,

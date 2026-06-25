@@ -1,6 +1,7 @@
 import { onRequestGet as authGet } from '../functions/api/auth.js';
 import { onRequestPost as deviceStartPost } from '../functions/api/device-start.js';
 import { onRequestPost as deviceTokenPost } from '../functions/api/device-token.js';
+import { onRequestGet as visitorReportGet } from '../functions/api/visitor-report.js';
 import { onRequestGet as visitorsGet } from '../functions/api/visitors.js';
 
 const failures = [];
@@ -26,6 +27,27 @@ async function withFetchMock(mock, callback) {
   } finally {
     globalThis.fetch = originalFetch;
   }
+}
+
+function createMemoryKv() {
+  const store = new Map();
+
+  return {
+    async get(key, type) {
+      const value = store.get(key);
+      if (value === undefined) return null;
+      return type === 'json' ? JSON.parse(value) : value;
+    },
+    async put(key, value) {
+      store.set(key, String(value));
+    },
+  };
+}
+
+function withCf(request, cf) {
+  Object.defineProperty(request, 'cf', { value: cf });
+
+  return request;
 }
 
 const unsupportedAuth = await authGet({
@@ -137,6 +159,72 @@ const failedVisitorsJson = await readJson(failedVisitors);
 assert(failedVisitors.status === 503, 'Visitor storage failure should return 503');
 assert(failedVisitors.headers.get('cache-control') === 'no-store', 'Visitor storage failure should be no-store');
 assert(failedVisitorsJson?.error === 'visitor_storage_unavailable', 'Visitor storage failure should be explicit');
+
+const geoKv = createMemoryKv();
+const geoEnv = { VISITOR_KV: geoKv, VISITOR_SALT: 'qa-salt' };
+const firstGeoVisit = await visitorsGet({
+  env: geoEnv,
+  request: withCf(new Request('https://blog.loven7.com/api/visitors', {
+    headers: {
+      'cf-connecting-ip': '203.0.113.20',
+      'user-agent': 'Geo QA Browser',
+    },
+  }), {
+    country: 'US',
+    region: 'California',
+    city: 'San Francisco',
+    colo: 'SFO',
+    timezone: 'America/Los_Angeles',
+  }),
+});
+const firstGeoJson = await readJson(firstGeoVisit);
+assert(firstGeoJson?.counted === true, 'First geo visit should be counted as a unique visitor');
+
+const secondGeoVisit = await visitorsGet({
+  env: geoEnv,
+  request: withCf(new Request('https://blog.loven7.com/api/visitors', {
+    headers: {
+      'cf-connecting-ip': '203.0.113.20',
+      'user-agent': 'Geo QA Browser',
+    },
+  }), {
+    country: 'US',
+    region: 'California',
+    city: 'San Francisco',
+    colo: 'SFO',
+    timezone: 'America/Los_Angeles',
+  }),
+});
+const secondGeoJson = await readJson(secondGeoVisit);
+assert(secondGeoJson?.counted === false, 'Repeat geo visit should not create another unique visitor');
+assert(secondGeoJson?.count === 1, 'Repeat geo visit should keep unique visitor count at 1');
+
+const disabledReport = await visitorReportGet({
+  env: geoEnv,
+  request: new Request('https://blog.loven7.com/api/visitor-report?token=report-token'),
+});
+assert(disabledReport.status === 404, 'Visitor report should be disabled until a report token is configured');
+
+const unauthorizedReport = await visitorReportGet({
+  env: { ...geoEnv, VISITOR_REPORT_TOKEN: 'report-token' },
+  request: new Request('https://blog.loven7.com/api/visitor-report?token=wrong-token'),
+});
+assert(unauthorizedReport.status === 401, 'Visitor report should reject a wrong token');
+
+const authorizedReport = await visitorReportGet({
+  env: { ...geoEnv, VISITOR_REPORT_TOKEN: 'report-token' },
+  request: new Request('https://blog.loven7.com/api/visitor-report', {
+    headers: { authorization: 'Bearer report-token' },
+  }),
+});
+const authorizedReportJson = await readJson(authorizedReport);
+assert(authorizedReport.status === 200, 'Visitor report should return 200 with a valid token');
+assert(authorizedReportJson?.uniqueVisitors === 1, 'Visitor report should include total unique visitors');
+assert(authorizedReportJson?.locations?.[0]?.country === 'US', 'Visitor report should include country aggregation');
+assert(authorizedReportJson?.locations?.[0]?.city === 'San Francisco', 'Visitor report should include city aggregation');
+assert(authorizedReportJson?.locations?.[0]?.uniqueVisitors === 1, 'Visitor report should count unique visitors by location once');
+assert(authorizedReportJson?.locations?.[0]?.visits === 2, 'Visitor report should count repeat visits by location');
+assert(!JSON.stringify(authorizedReportJson).includes('203.0.113.20'), 'Visitor report must not expose raw IP addresses');
 
 if (failures.length) {
   console.error('Functions QA failed:');
