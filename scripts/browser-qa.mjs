@@ -131,6 +131,28 @@ function ignoreConsoleError(text) {
   return /favicon\.ico/i.test(text);
 }
 
+async function mockGithubStarApi(page) {
+  const stars = {
+    'Lur1N77777/CloudMail': 19,
+    'Lur1N77777/loven7-mail-cloudflare-suite': 15,
+  };
+
+  await page.route('https://api.github.com/repos/**', (route) => {
+    const repo = decodeURIComponent(new URL(route.request().url()).pathname.replace('/repos/', ''));
+    const count = stars[repo] ?? 0;
+
+    route.fulfill({
+      status: count > 0 ? 200 : 404,
+      contentType: 'application/json',
+      headers: {
+        'access-control-allow-origin': '*',
+        'x-ratelimit-remaining': '59',
+      },
+      body: JSON.stringify({ full_name: repo, stargazers_count: count }),
+    });
+  });
+}
+
 async function collectPageMetrics(page) {
   return page.evaluate(() => {
     const doc = document.documentElement;
@@ -280,6 +302,9 @@ async function main() {
         page.on('pageerror', (error) => {
           pageErrors.push(error.message);
         });
+        if (route === '/') {
+          await mockGithubStarApi(page);
+        }
 
         const response = await page.goto(`${baseUrl}${route}`, {
           waitUntil: 'networkidle',
@@ -371,7 +396,17 @@ async function main() {
     await missing.close();
 
     const home = await browser.newPage({ viewport: viewports[1] });
+    await mockGithubStarApi(home);
     await home.goto(`${baseUrl}/`, { waitUntil: 'networkidle' });
+    await home.waitForFunction(() => {
+      const values = Array.from(document.querySelectorAll('.card.project[data-repo]')).map((card) => ({
+        repo: card.getAttribute('data-repo'),
+        stars: card.querySelector('.star-num')?.textContent?.trim(),
+      }));
+
+      return values.some((item) => item.repo === 'Lur1N77777/CloudMail' && item.stars === '19')
+        && values.some((item) => item.repo === 'Lur1N77777/loven7-mail-cloudflare-suite' && item.stars === '15');
+    }, { timeout: 5_000 });
     await home.click('#paletteTrigger');
     if ((await home.locator('#palette.open').count()) !== 1) {
       failures.push('home mobile: palette did not open');

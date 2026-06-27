@@ -254,6 +254,56 @@ const structuredData = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
         });
       });
 
+      (function syncProjectStars() {
+        const CACHE_TTL = 10 * 60 * 1000;
+        const cards = Array.from(document.querySelectorAll<HTMLElement>('.card.project[data-repo]'));
+        if (!cards.length) return;
+
+        function render(numEl: Element, value: number) {
+          const old = Number.parseInt(numEl.textContent || '', 10);
+          numEl.textContent = new Intl.NumberFormat('zh-CN').format(value);
+
+          if (!Number.isNaN(old) && old !== value) {
+            numEl.classList.remove('bump');
+            void (numEl as HTMLElement).offsetWidth;
+            numEl.classList.add('bump');
+          }
+        }
+
+        cards.forEach(async (card) => {
+          const repo = card.dataset.repo?.trim();
+          const numEl = card.querySelector('.star-num');
+          const badge = card.querySelector('.tag.star');
+          if (!repo || !numEl) return;
+
+          const cacheKey = `stars:${repo}`;
+          const cached = storage.json(cacheKey);
+          if (cached && typeof cached.n === 'number' && Date.now() - Number(cached.t || 0) < CACHE_TTL) {
+            render(numEl, cached.n);
+            return;
+          }
+
+          badge?.classList.add('updating');
+          try {
+            const response = await fetch(`https://api.github.com/repos/${repo}`, {
+              headers: { accept: 'application/vnd.github+json' },
+            });
+            if (!response.ok) throw new Error(`GitHub API ${response.status}`);
+            const data = await response.json();
+            const stars = data?.stargazers_count;
+
+            if (typeof stars === 'number') {
+              storage.set(cacheKey, JSON.stringify({ n: stars, t: Date.now() }));
+              render(numEl, stars);
+            }
+          } catch (error) {
+            console.warn('GitHub star 同步失败，继续显示本地兜底值:', repo, error);
+          } finally {
+            badge?.classList.remove('updating');
+          }
+        });
+      })();
+
       const readingProgress = document.getElementById('readingProgress');
       if (readingProgress) {
         let ticking = false;

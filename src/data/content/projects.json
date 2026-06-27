@@ -5,7 +5,7 @@
       "name": "CloudMail",
       "href": "https://github.com/Lur1N77777/CloudMail",
       "repo": "Lur1N77777/CloudMail",
-      "stars": 14,
+      "stars": 19,
       "desc": "一个在手机上查看 Cloudflare 临时邮箱的 Android App,把收验证码、看邮件和临时附件这些碎片操作放到移动端完成。",
       "logo": "/assets/cloudmail-logo.png",
       "tags": ["TypeScript", "Expo", "React Native"]
@@ -14,7 +14,7 @@
       "name": "loven7-mail-cloudflare-suite",
       "href": "https://github.com/Lur1N77777/loven7-mail-cloudflare-suite",
       "repo": "Lur1N77777/loven7-mail-cloudflare-suite",
-      "stars": 9,
+      "stars": 15,
       "desc": "给 Cloudflare 临时邮箱配的一套网页前端和轻量后台,负责收邮件、管理邮箱和支撑移动端使用。",
       "logo": "/assets/loven7-logo.svg",
       "tags": ["TypeScript", "Cloudflare"]
